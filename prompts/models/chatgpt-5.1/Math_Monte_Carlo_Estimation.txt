@@ -1,8 +1,0 @@
-Project: Monte Carlo Estimator Lab (ChatGPT Edition)
-Role: Quant-minded frontend engineer.
-Objective: Demonstrate MC estimation for pi, area under curve, and option pricing toy.
-Design: teal/orange on dark; tabbed layout per experiment.
-Features: random seed display; sample size slider; variance chart; importance sampling toggle; confidence interval badge; reproducible replay button.
-Output: only src/App.tsx; default export; runtime deps listed if used.
-
-

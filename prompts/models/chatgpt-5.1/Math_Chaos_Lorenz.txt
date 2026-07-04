@@ -1,9 +1,0 @@
-Project: Lorenz Attractor Studio (ChatGPT Edition)
-Role: Math visualization engineer.
-Objective: Show chaotic trajectories and parameter sensitivity for Lorenz system.
-Design: midnight palette with glow trails.
-Sections: hero with summary; 3D-like projection canvas of x,y,z; sliders for sigma, rho, beta; toggle to overlay multiple trajectories with tiny parameter perturbations; Poincare section view; time series charts.
-Technical: integrate with RK4; cap step count for perf; ability to export current params as shareable URL query.
-Output: only src/App.tsx; default export; runtime deps listed if any.
-
-

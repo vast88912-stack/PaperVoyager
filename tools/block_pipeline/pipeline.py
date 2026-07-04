@@ -3,7 +3,7 @@ pipeline.py — Orchestrator for block-level generation + Qwen3-VL evaluation.
 
 Usage:
   python tools/block_pipeline/pipeline.py \\
-    --prompts Algorithm_Dynamic_Programming,Math_Chaos_Lorenz,ML_Gradient_Descent,Physics_Gravity_Orbits,Theory_Cellular_Automata \\
+    --prompts Algorithm_Dynamic_Programming,Math_Chaos_Lorenz,ML_Gradient_Descent,Physics_Gravity_Orbits,Sys_Virtual_Memory \\
     --gen-env-file .env.qwen \\
     --merge-env-file .env \\
     --out-base outputs/block_pipeline \\
@@ -489,7 +489,7 @@ def main() -> None:
     )
     parser.add_argument(
         "--prompts",
-        default="Algorithm_Dynamic_Programming,Math_Chaos_Lorenz,ML_Gradient_Descent,Physics_Gravity_Orbits,Theory_Cellular_Automata",
+        default="Algorithm_Dynamic_Programming,Math_Chaos_Lorenz,ML_Gradient_Descent,Physics_Gravity_Orbits,Sys_Virtual_Memory",
         help="Comma-separated list of prompt slugs (CamelCase, must match prompts/*.txt)",
     )
     parser.add_argument("--gen-env-file", default=".env.qwen", help="Dotenv file for code generation LLM")

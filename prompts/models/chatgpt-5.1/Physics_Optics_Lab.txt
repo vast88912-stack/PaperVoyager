@@ -1,8 +1,0 @@
-Project: Optics Lab (ChatGPT Edition)
-Role: Interactive STEM builder.
-Objective: Visualize reflection, refraction, and lenses with draggable elements.
-Design: light lab notebook aesthetic.
-Features: ray diagram canvas; draggable mirrors, lenses (convex/concave), refractive mediums; show Snell's law angles; focal length slider; wave/particle toggle with simple interference view.
-Output: only src/App.tsx; default export; runtime deps noted if any.
-
-

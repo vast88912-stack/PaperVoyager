@@ -1,8 +1,0 @@
-Project: Cellular Automata Playground (ChatGPT Edition)
-Role: Creative coder.
-Objective: Explore 1D ECA (Rule 30/110) and 2D Game of Life variants.
-Design: pixel art grid with retro palette.
-Features: rule selector and binary rule visualizer; seed editor; run/step controls; wrap vs bounded edges; stats (alive cells, entropy estimate); export pattern to RLE.
-Output: only src/App.tsx; default export; runtime deps noted if any.
-
-

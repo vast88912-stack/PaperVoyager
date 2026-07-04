@@ -1,8 +1,0 @@
-Project: CPU Scheduler Studio (ChatGPT Edition)
-Role: Systems UI engineer.
-Objective: Compare FCFS, SJF, SRTF, RR, MLFQ scheduling.
-Design: terminal-inspired dark theme with Gantt chart.
-Features: job list editor; time quantum slider; per-algo Gantt animation; metrics table (waiting/turnaround/response); starvation warning badge; random workload generator.
-Output: only src/App.tsx; default export; runtime deps noted if any.
-
-

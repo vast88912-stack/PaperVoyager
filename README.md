@@ -1,94 +1,30 @@
 # PaperVoyager
 
-**Building Interactive Web with Visual Language Models**
+Minimal public code for **PaperVoyager: Building Interactive Web with Visual Language Models**.
 
-[![Paper](https://img.shields.io/badge/arXiv-2603.22999-b31b1b.svg)](https://arxiv.org/abs/2603.22999)
-[![Task](https://img.shields.io/badge/task-paper--to--interactive--system-2F70C1)](#what-is-papervoyager)
-[![Stack](https://img.shields.io/badge/stack-React%20%7C%20TypeScript%20%7C%20Vite-3F916C)](#quick-start)
+This repo keeps only what is needed to run the generation pipeline and benchmark/evaluation utilities:
 
-PaperVoyager is a **Paper-to-Interactive-System Agent** that transforms static research papers into executable, interactive web systems. Instead of converting a paper into another static artifact such as a summary, webpage, or slide deck, PaperVoyager aims to produce a runnable **WebPaper** where readers can manipulate inputs, observe state transitions, and explore the mechanisms described by the paper.
+- `generate_apps.py`: baseline prompt-to-React/TypeScript generation
+- `tools/block_pipeline/`: block-level generation, rendering, VLM scoring, and merging
+- `benchmark/`: browser probing and checklist/interaction evaluation code
+- `prompts/`: topic prompts used by the pipeline
 
-This repository contains the public code, prompts, and benchmark utilities associated with:
+Generated apps, screenshots, raw model responses, and benchmark result tables are intentionally not committed.
 
-> Dasen Dai, Biao Wu, Meng Fang, Wenhao Wang.  
-> **PaperVoyager: Building Interactive Web with Visual Language Models.**  
-> arXiv:2603.22999v3, 2026.
-
-## What Is PaperVoyager?
-
-Technical papers often describe algorithms, systems, physical dynamics, or stateful mechanisms that are hard to understand through passive reading alone. PaperVoyager reframes paper understanding as **interactive exploration**:
-
-1. **Parse the PDF** into a mechanism-aware representation.
-2. **Identify core mechanisms** such as algorithmic steps, parameter-dependent behavior, state transitions, and component relationships.
-3. **Generate a structured specification** that defines interactive modules, user controls, page layout, and expected visual behavior.
-4. **Synthesize React/TypeScript web modules** through block-level generation.
-5. **Filter and merge candidates** into a complete executable WebPaper.
-
-The result is a single-page interactive web application that exposes the paper's dynamics directly in the browser.
-
-```mermaid
-flowchart LR
-    A[PDF Paper] --> B[Mechanism Extraction]
-    B --> C[Structured Specification]
-    C --> D[Block-Level Generation]
-    D --> E[VLM Candidate Filtering]
-    E --> F[Block Merging]
-    F --> G[Executable WebPaper]
-```
-
-## Paper Highlights
-
-- **New task:** end-to-end paper-to-interactive-system synthesis.
-- **Benchmark:** 19 representative research-paper topics across algorithms, data structures, distributed systems, mathematics, machine learning, physics, and systems.
-- **Ground truth:** each task is paired with an expert-authored interactive web system.
-- **Evaluation:** combines checklist matching for design compliance with interaction-based browser exploration for functional reliability.
-- **Result:** PaperVoyager achieves the best average success rate reported in the paper, **80.7%**, outperforming strong baseline VLMs under the benchmark's 60/40 checklist-interaction scoring protocol.
-
-## Repository Layout
-
-```text
-PaperVoyager/
-|-- generate_apps.py              # Baseline prompt-to-React/TypeScript generation
-|-- tools/
-|   |-- block_pipeline/           # PaperVoyager block generation, rendering, scoring, merging
-|   |-- build_portal.py           # Build a local portal over generated WebPapers
-|   |-- build_all_tsx.py          # Batch build generated Vite projects
-|   `-- run_full_codegen_eval.py  # Benchmark/evaluation helpers
-|-- prompts/                      # Topic-conditioned WebPaper generation prompts
-|-- benchmark/                    # Benchmark runner, interaction probing, and evaluators
-|-- docs/                         # Paper-aligned notes and repository documentation
-`-- .env.example                  # Local configuration template
-```
-
-Generated WebPaper builds, screenshots, raw model responses, and benchmark result tables are created at runtime and are not committed to this public repository.
-
-## Quick Start
-
-Create an environment and install dependencies:
+## Setup
 
 ```bash
 python -m venv .venv
 source .venv/bin/activate  # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
+pip install -r benchmark/requirements.txt
 python -m playwright install chromium
-```
-
-Configure a code generation provider:
-
-```bash
 cp .env.example .env
-# edit .env with your API key and model settings
 ```
 
-Generate WebPaper apps from topic prompts:
+Fill `.env` with your model provider key.
 
-```bash
-python generate_apps.py --provider gemini --model gemini-2.0-flash-exp
-```
-
-Generated projects are written under `outputs/`, which is ignored by git.
-
-Run the PaperVoyager block pipeline on selected topics:
+## Run Pipeline
 
 ```bash
 python tools/block_pipeline/pipeline.py \
@@ -99,81 +35,37 @@ python tools/block_pipeline/pipeline.py \
   --headless
 ```
 
-Build a local browsing portal:
+## Run Baseline Generation
 
 ```bash
-python tools/build_portal.py
+python generate_apps.py --provider gemini --model gemini-2.0-flash-exp
+```
+
+## Run Evaluation
+
+Serve generated outputs first:
+
+```bash
 python -m http.server 8000
 ```
 
-Then open:
+Then run one of:
 
-```text
-http://localhost:8000/index.html
+```bash
+bash benchmark/run_all_codegen_score.sh
+bash benchmark/run_all_site_exec.sh
 ```
-
-## What Is Kept in This Public Repo?
-
-This public repository intentionally keeps the reproducible code path and removes bulky generated artifacts:
-
-- kept: generation pipeline, block pipeline, benchmark/evaluation code, prompts, documentation
-- not committed: generated WebPaper builds, screenshots, raw model responses, local caches, benchmark result tables
-
-Run the commands above to regenerate outputs locally.
-
-## Benchmark Topics
-
-The benchmark contains 19 topics selected because their core mechanisms naturally support interactive representation.
-
-| Abbrev. | Topic | Domain |
-|---|---|---|
-| Alg-DP | Dynamic Programming | Algorithms |
-| Alg-GP | Graph Pathfinding | Algorithms |
-| Alg-SR | Sorting Algorithms | Algorithms |
-| DS-BT | Balanced BSTs | Data Structures |
-| DS-HM | Hash Maps / Cuckoo Hashing | Data Structures |
-| Dist-Raft | Raft Consensus | Distributed Systems |
-| Math-Lorenz | Lorenz Attractor | Mathematics |
-| Math-FFT | Fourier Series / FFT | Mathematics |
-| Math-Eig | Eigendecomposition | Mathematics |
-| Math-MC | Monte Carlo Estimation | Mathematics |
-| ML-GD | Gradient Descent | Machine Learning |
-| ML-KM | K-Means Clustering | Machine Learning |
-| ML-NNV | Neural Net Backpropagation | Machine Learning |
-| Phys-CFD | 2D Fluid Simulation | Physics |
-| Phys-Orbit | N-body Gravity | Physics |
-| Phys-Opt | Optics & Ray Tracing | Physics |
-| Phys-Therm | Thermodynamics | Physics |
-| Sys-Sched | CPU Scheduling | Systems |
-| Sys-VM | Virtual Memory & Paging | Systems |
-
-## Evaluation
-
-The paper evaluates generated WebPapers with two complementary signals:
-
-- **Checklist Matching Evaluation:** checks whether required visualization modules and interactive elements from the expert checklist are implemented.
-- **Interactive Exploration Evaluation:** uses browser automation to interact with buttons, sliders, dropdowns, inputs, and canvas regions, then checks whether the page exhibits meaningful visible changes.
-
-The final score reported in the paper combines these two branches with weights of **60%** and **40%**, respectively.
 
 ## Citation
 
-If you find PaperVoyager useful, please cite:
-
 ```bibtex
 @misc{dai2026papervoyager,
-  title        = {PaperVoyager: Building Interactive Web with Visual Language Models},
-  author       = {Dai, Dasen and Wu, Biao and Fang, Meng and Wang, Wenhao},
-  year         = {2026},
-  eprint       = {2603.22999},
-  archivePrefix= {arXiv},
-  primaryClass = {cs.CL},
-  url          = {https://arxiv.org/abs/2603.22999}
+  title={PaperVoyager: Building Interactive Web with Visual Language Models},
+  author={Dai, Dasen and Wu, Biao and Fang, Meng and Wang, Wenhao},
+  year={2026},
+  eprint={2603.22999},
+  archivePrefix={arXiv},
+  primaryClass={cs.CL},
+  url={https://arxiv.org/abs/2603.22999}
 }
 ```
-
-## Notes
-
-- This repository is intended for research and demonstration.
-- Generated WebPaper outputs may require local dependency installation before building.
-- Do not commit `.env` files or API keys. Use `.env.example` as the template.

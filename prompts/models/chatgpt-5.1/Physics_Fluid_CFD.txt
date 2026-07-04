@@ -1,9 +1,0 @@
-Project: 2D Fluid Sandbox (ChatGPT Edition)
-Role: Graphics-focused engineer.
-Objective: Show incompressible 2D fluid (stable fluids) with dye and velocity field.
-Design: dark canvas with vivid dye; side controls for viscosity, diffusion, timestep.
-Features: user can paint dye/forces; toggle pressure visualization; preset scenes (smoke jet, vortex street); performance meter; reset button.
-Technical: implement simple stable fluids on grid; keep resolution modest; no WebGL dependency required (canvas ok).
-Output: only src/App.tsx; default export; runtime deps noted if any.
-
-
