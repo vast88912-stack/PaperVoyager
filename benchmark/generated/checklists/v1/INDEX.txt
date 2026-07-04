@@ -1,0 +1,10 @@
+### GradientLab Benchmark Checklist Index (v1)
+
+- GLOBAL: GLOBAL_Global_App_Checks.txt (5 items)
+- M0: M0_The_Descent.txt (2 items)
+- M1: M1_The_Loss_Landscape.txt (5 items)
+- M2: M2_Steps_&_Learning_Rate.txt (6 items)
+- M3: M3_Local_Minima.txt (4 items)
+- M4: M4_Optimizers.txt (5 items)
+- M5: M5_Blind_Climber.txt (8 items)
+- ROBUSTNESS: ROBUSTNESS_Robustness.txt (2 items)

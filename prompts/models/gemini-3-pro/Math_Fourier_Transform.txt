@@ -1,0 +1,67 @@
+**Project:** Fourier Transform Audio Lab (Gold Standard)
+**Role:** Senior Creative Technologist.
+**Objective:** Build a high-complexity, single-file React+TS teaching dashboard that visualizes the Discrete Fourier Transform (DFT/FFT) by decomposing audio signals into sine waves.
+
+**Global UX Spec:**
+- Layout: Landing Page (Hero) -> Dashboard (Sidebar + Main + Inspector).
+- Theme: Scientific Dark Mode (Synthesizer/Retro-wave aesthetic).
+- Navigation: Domain Selector (Time vs Frequency).
+- Inspector: "Harmonic Table" listing Amplitude, Frequency, Phase.
+
+**Module Plan (Landing + 5 Modules):**
+1. **Module 0: Hero / The Sound of Math**
+   - Visual: A complex waveform transforming into a rotating set of circles (epicycles).
+   - Text: "Every sound is just a sum of pure tones. Unmixing the smoothie."
+
+2. **Module 1: The Building Blocks (Sine Waves)**
+   - Concept: Constructive/Destructive Interference.
+   - Interactive: Additive Synthesis. 3 Sliders (Freq, Amp, Phase) to sum 3 waves.
+   - Visualization: Show individual waves + The Summed Result.
+
+3. **Module 2: The Decomposition (DFT)**
+   - Concept: Breaking it apart.
+   - Visualization: Draw a waveform (Time Domain).
+   - Animation: Show the "Frequency Bars" (Spectrum) rising to match the drawing.
+
+4. **Module 3: Epicycles (Complex Plane)**
+   - Concept: Euler's Formula.
+   - Visualization: 3Blue1Brown style rotating vectors.
+   - Interactive: Change the spectrum and watch the epicycles redraw the shape.
+
+5. **Module 4: Audio Filter Lab**
+   - Concept: Low-pass / High-pass.
+   - Interactive: Load a sample sound (or mic input if feasible, otherwise generated noise).
+   - Controls: Cutoff Frequency slider.
+   - Visual: See the high-frequency bars disappear in the spectrum.
+
+6. **Module 5: The "Perfect Reconstruction" Challenge**
+   - Task: "Match the Square Wave."
+   - Goal: Use only 5 sine waves to approximate a Square Wave (Gibbs Phenomenon).
+   - Scoring: Error metric (RMSE) between your wave and the target.
+
+**Scoring & Gamification:**
+- **Signal Engineer**: Earned by filtering noise.
+- **Harmonic Master**: Earned by perfect synthesis.
+
+**Implementation Notes:**
+- **Canvas**: Essential for drawing waveforms at 60fps.
+- **Math**: Implement a simple DFT (O(N^2)) for small N (visuals) or FFT (O(N log N)) if N > 256.
+- **Audio**: Use Web Audio API for real-time sound generation matching the visuals.
+
+**Acceptance Checklist:**
+- [ ] Landing page with Epicycles.
+- [ ] Additive Synthesis (Summing waves).
+- [ ] Time Domain vs Frequency Domain views.
+- [ ] Epicycle visualization (Phasors).
+- [ ] Square Wave challenge.
+- [ ] Single file `src/App.tsx`.
+
+**Codegen Output Requirements:**
+- Return ONLY one file's code: `src/App.tsx`
+- Must include: `export default function App() { ... }`
+- No markdown fences in the final code output
+- If any optional runtime deps are used, list them explicitly at the end of the prompt under: `Runtime deps: ...`
+
+
+
+

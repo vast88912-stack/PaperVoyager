@@ -1,0 +1,55 @@
+### GradientLab Benchmark Checklist (v1)
+module: M2
+title: Steps & Learning Rate
+items: 6
+total_weight: 7.50
+
+#### Items
+- id: GLB-M2-001
+  weight: 1.0
+  description: 进入 Steps & Learning Rate，点击 Descend 开始模拟，按钮应变为 Pause，且路径/点位随时间变化。
+  action: 按 runner 轨迹执行（或人工按描述操作）
+  expected: 满足 judge 规则：play_causes_visual_change_and_toggle
+  evidence: screens_min=3 trace_min_steps=3
+  auto_judge_rule: {"type": "play_causes_visual_change_and_toggle", "play_text": "Descend", "pause_text": "Pause", "min_diff_ratio": 0.02}
+- id: GLB-M2-002
+  weight: 1.0
+  description: 在运行中拖动 Learning Rate 滑块，面板上的数值应变化。
+  action: 按 runner 轨迹执行（或人工按描述操作）
+  expected: 满足 judge 规则：numeric_text_changes
+  evidence: screens_min=2 trace_min_steps=2
+  auto_judge_rule: {"type": "numeric_text_changes", "label_contains": "Learning Rate", "min_delta": 0.05}
+- id: GLB-M2-003
+  weight: 1.5
+  description: 学习率对动态有影响：分别设置低(≈0.02)与高(≈0.45)运行，画面变化模式应不同（高 LR 更易震荡/跳跃）。
+  action: 按 runner 轨迹执行（或人工按描述操作）
+  expected: 满足 judge 规则：lr_regime_difference
+  evidence: screens_min=4 trace_min_steps=4
+  auto_judge_rule: {"type": "lr_regime_difference", "low_lr": 0.02, "high_lr": 0.45, "min_behavior_diff_ratio": 0.02}
+- id: GLB-M2-004
+  weight: 1.0
+  description: 点击 Reset（旋转箭头），路径应回到初始状态并可再次 Descend。
+  action: 按 runner 轨迹执行（或人工按描述操作）
+  expected: 满足 judge 规则：reset_restores_initial_like
+  evidence: screens_min=3 trace_min_steps=3
+  auto_judge_rule: {"type": "reset_restores_initial_like", "min_diff_ratio": 0.02}
+- id: GLB-M2-005
+  weight: 1.5
+  description: 在 Steps & Learning Rate 点击 Pause 后等待 700ms，画面变化应明显减小（暂停生效）。
+  action: 按 runner 轨迹执行（或人工按描述操作）
+  expected: 满足 judge 规则：pause_reduces_motion
+  evidence: screens_min=3 trace_min_steps=3
+  auto_judge_rule: {"type": "pause_reduces_motion", "max_diff_ratio": 0.01}
+- id: GLB-M2-007
+  weight: 1.5
+  description: 在 Steps & Learning Rate 切换不同地形（Bowl/Saddle/Rastrigin）后运行 Descend，画面应有差异（地形切换对动态生效）。
+  action: 按 runner 轨迹执行（或人工按描述操作）
+  expected: 满足 judge 规则：switch_then_run_diff
+  evidence: screens_min=4 trace_min_steps=4
+  auto_judge_rule: {"type": "switch_then_run_diff", "click_texts": ["Bowl", "Saddle"], "min_behavior_diff_ratio": 0.02}
+
+#### Scoring
+- 每项：pass=weight，fail=0。
+- 模块得分 = sum(pass_weights) / sum(weights)。
+- 全局/总体 Success Rate 以任务通过率（pass/total）统计。
+- 如启用 LLM/VLM 评测：同一任务可重复评测 3 次，输出 mean±std（对齐 WebVoyager Table 1 风格）。

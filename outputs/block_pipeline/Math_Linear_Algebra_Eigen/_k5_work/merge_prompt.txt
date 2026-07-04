@@ -1,0 +1,1618 @@
+You are merging multiple React component blocks into one monolithic App.tsx.
+Return ONLY valid TSX code — no markdown fences, no explanations.
+The merged file must:
+- Have one unified imports section at the top
+- Have one root App() default export function
+- Deduplicate all state and helper functions
+- Render all blocks in a sidebar-navigated layout (similar to the original prompt's design)
+- Use Tailwind CSS for styling
+- Be fully self-contained in a single file
+
+
+---
+ORIGINAL APP SPECIFICATION:
+Project: Eigen Explorer (ChatGPT Edition)
+Role: Linear algebra communicator.
+Objective: Visualize eigenvectors/values for 2x2 matrices.
+Design: clean minimal with grid background.
+Features: matrix editor (a,b,c,d) with presets; vector field plot showing stretch/rotation; animate power iteration convergence; show determinant/trace and stability region; complex eigenvalues explanation card.
+Technical: avoid external math libs; include numeric stability guard.
+Output: only src/App.tsx; default export; runtime deps noted if any.
+
+
+
+
+---
+You have 5 block implementations to merge.
+Each block is a standalone React component that implements one module.
+Your task: combine them into a single polished App.tsx.
+
+Design requirements:
+- Left sidebar with navigation tabs for each module
+- Main content area that shows the active module
+- Unified dark theme (slate-950 background, slate-100 text)
+- Keep all interactive features from each block intact
+- Merge duplicate imports and state declarations
+
+=== BLOCK 1: Matrix Editor (A,B,C,D) With ===
+Description: matrix editor (a,b,c,d) with presets
+
+import React, { useState, useMemo } from 'react';
+
+type Matrix2x2 = [number, number, number, number];
+
+const PRESETS: { label: string; value: Matrix2x2; description: string }[] = [
+  { label: 'Identity', value: [1, 0, 0, 1], description: 'No transformation. Leaves space unchanged.' },
+  { label: 'Scaling (2x)', value: [2, 0, 0, 2], description: 'Expands space uniformly by a factor of 2.' },
+  { label: 'Rotation (90°)', value: [0, -1, 1, 0], description: 'Rotates space 90 degrees counter-clockwise.' },
+  { label: 'Shear X', value: [1, 1, 0, 1], description: 'Skews space along the X axis.' },
+  { label: 'Projection X', value: [1, 0, 0, 0], description: 'Collapses 2D space onto the X axis.' },
+  { label: 'Complex Eigen', value: [1, -2, 2, 1], description: 'Produces complex eigenvalues (rotation + scaling).' },
+  { label: 'Saddle Point', value: [2, 1, 1, -2], description: 'Stretches in one direction, squishes in another.' },
+];
+
+export default function App() {
+  // Store as strings to allow typing '-' or '0.'
+  const [matrixStr, setMatrixStr] = useState<[string, string, string, string]>(['1', '0', '0', '1']);
+  const [activePreset, setActivePreset] = useState<string>('Identity');
+
+  // Parse strings to numbers for math, fallback to 0 if invalid
+  const matrixNum = useMemo<Matrix2x2>(() => {
+    return matrixStr.map((s) => {
+      const n = parseFloat(s);
+      return isNaN(n) ? 0 : n;
+    }) as Matrix2x2;
+  }, [matrixStr]);
+
+  const handleInputChange = (index: number, value: string) => {
+    const newMatrix = [...matrixStr] as [string, string, string, string];
+    newMatrix[index] = value;
+    setMatrixStr(newMatrix);
+    setActivePreset('Custom');
+  };
+
+  const applyPreset = (preset: typeof PRESETS[0]) => {
+    setMatrixStr(preset.value.map(String) as [string, string, string, string]);
+    setActivePreset(preset.label);
+  };
+
+  // Math Analysis
+  const analysis = useMemo(() => {
+    const [a, b, c, d] = matrixNum;
+    
+    // Numeric stability guard
+    const clean = (val: number) => (Math.abs(val) < 1e-9 ? 0 : val);
+    const formatNum = (val: number) => Number(clean(val).toFixed(3));
+
+    const trace = clean(a + d);
+    const det = clean(a * d - b * c);
+    const discriminant = clean(trace * trace - 4 * det);
+
+    let eigenvalues: string[] = [];
+    let isComplex = false;
+
+    if (discriminant < 0) {
+      isComplex = true;
+      const realPart = formatNum(trace / 2);
+      const imagPart = formatNum(Math.sqrt(-discriminant) / 2);
+      eigenvalues = [
+        `${realPart} + ${imagPart}i`,
+        `${realPart} - ${imagPart}i`,
+      ];
+    } else {
+      const l1 = formatNum((trace + Math.sqrt(discriminant)) / 2);
+      const l2 = formatNum((trace - Math.sqrt(discriminant)) / 2);
+      eigenvalues = [l1.toString(), l2.toString()];
+    }
+
+    return {
+      trace: formatNum(trace),
+      det: formatNum(det),
+      discriminant: formatNum(discriminant),
+      eigenvalues,
+      isComplex,
+      charEq: `λ² ${trace >= 0 ? '-' : '+'} ${Math.abs(trace)}λ ${det >= 0 ? '+' : '-'} ${Math.abs(det)} = 0`
+    };
+  }, [matrixNum]);
+
+  // CSS Matrix for the visualizer: matrix(a, b, c, d, tx, ty)
+  // Note: CSS matrix maps to [a c; b d] in standard math notation.
+  // So standard [m00 m01; m10 m11] -> CSS matrix(m00, m10, m01, m11, 0, 0)
+  const cssTransform = `matrix(${matrixNum[0]}, ${matrixNum[2]}, ${matrixNum[1]}, ${matrixNum[3]}, 0, 0)`;
+
+  return (
+    <div className="min-h-screen bg-slate-50 text-slate-800 font-sans selection:bg-indigo-200 relative overflow-hidden flex flex-col items-center py-12 px-4 sm:px-6 lg:px-8">
+      {/* Grid Background */}
+      <div 
+        className="absolute inset-0 pointer-events-none opacity-[0.03]"
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0h40v40H0V0zm20 20h20v20H20V20zM0 20h20v20H0V20zM20 0h20v20H20V0zM0 0h20v20H0V0z' fill='%23000' fill-opacity='1' fill-rule='evenodd'/%3E%3C/svg%3E")`,
+          backgroundSize: '40px 40px'
+        }}
+      />
+
+      <div className="max-w-5xl w-full z-10 space-y-8">
+        
+        {/* Header */}
+        <div className="text-center space-y-2">
+          <h1 className="text-4xl font-extrabold tracking-tight text-slate-900">
+            Eigen Explorer
+          </h1>
+          <p className="text-lg text-slate-500 max-w-2xl mx-auto">
+            Interactive matrix editor. Adjust the components of the 2x2 matrix to see how it transforms space and alters its fundamental properties.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          
+          {/* Left Column: Editor & Presets */}
+          <div className="lg:col-span-7 space-y-6">
+            
+            {/* Matrix Editor Card */}
+            <div className="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden">
+              <div className="p-6 border-b border-slate-50 bg-slate-50/50 flex justify-between items-center">
+                <h2 className="text-sm font-bold uppercase tracking-widest text-slate-400">Matrix Editor</h2>
+                <span className="px-3 py-1 bg-indigo-50 text-indigo-600 text-xs font-semibold rounded-full">
+                  {activePreset}
+                </span>
+              </div>
+              
+              <div className="p-8 flex flex-col items-center justify-center min-h-[320px] relative">
+                
+                {/* The Matrix Input */}
+                <div className="flex items-center justify-center group">
+                  <div className="text-[120px] font-light text-slate-200 leading-none mr-6 select-none transition-colors group-hover:text-indigo-200">[</div>
+                  
+                  <div className="grid grid-cols-2 gap-6">
+                    {[0, 1, 2, 3].map((index) => (
+                      <input
+                        key={index}
+                        type="text"
+                        value={matrixStr[index]}
+                        onChange={(e) => handleInputChange(index, e.target.value)}
+                        className="w-24 h-24 text-center text-4xl font-semibold text-slate-700 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:outline-none focus:border-indigo-400 focus:ring-4 focus:ring-indigo-400/20 transition-all hover:bg-slate-100"
+                        placeholder="0"
+                      />
+                    ))}
+                  </div>
+                  
+                  <div className="text-[120px] font-light text-slate-200 leading-none ml-6 select-none transition-colors group-hover:text-indigo-200">]</div>
+                </div>
+
+                {/* Mini Visualizer */}
+                <div className="absolute bottom-6 right-6 w-24 h-24 border-2 border-slate-100 rounded-lg bg-slate-50 overflow-hidden flex items-center justify-center pointer-events-none">
+                  <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'linear-gradient(#cbd5e1 1px, transparent 1px), linear-gradient(90deg, #cbd5e1 1px, transparent 1px)', backgroundSize: '12px 12px' }} />
+                  <div 
+                    className="w-8 h-8 bg-indigo-500/80 border-2 border-indigo-600 origin-center transition-transform duration-500 ease-out"
+                    style={{ transform: cssTransform }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Presets */}
+            <div className="space-y-3">
+              <h3 className="text-sm font-bold uppercase tracking-widest text-slate-400 px-2">Presets</h3>
+              <div className="flex flex-wrap gap-2">
+                {PRESETS.map((preset) => (
+                  <button
+                    key={preset.label}
+                    onClick={() => applyPreset(preset)}
+                    title={preset.description}
+                    className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
+                      activePreset === preset.label
+                        ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200'
+                        : 'bg-white text-slate-600 border border-slate-200 hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700'
+                    }`}
+                  >
+                    {preset.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Right Column: Live Analysis */}
+          <div className="lg:col-span-5 space-y-6">
+            <div className="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden">
+              <div className="p-6 border-b border-slate-50 bg-slate-50/50">
+                <h2 className="text-sm font-bold uppercase tracking-widest text-slate-400">Live Analysis</h2>
+              </div>
+              
+              <div className="p-6 space-y-6">
+                
+                {/* Trace & Determinant */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100">
+                    <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Trace (T)</div>
+                    <div className="text-2xl font-semibold text-slate-800">{analysis.trace}</div>
+                    <div className="text-xs text-slate-500 mt-1 font-mono">a + d</div>
+                  </div>
+                  <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100">
+                    <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Determinant (D)</div>
+                    <div className="text-2xl font-semibold text-slate-800">{analysis.det}</div>
+                    <div className="text-xs text-slate-500 mt-1 font-mono">ad - bc</div>
+                  </div>
+                </div>
+
+                {/* Characteristic Equation */}
+                <div className="p-5 rounded-2xl bg-slate-800 text-white shadow-inner">
+                  <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Characteristic Equation</div>
+                  <div className="text-lg font-mono tracking-wide text-indigo-200">
+                    {analysis.charEq}
+                  </div>
+                </div>
+
+                {/* Eigenvalues */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">Eigenvalues (λ)</div>
+                    {analysis.isComplex && (
+                      <span className="px-2 py-0.5 bg-amber-100 text-amber-700 text-[10px] font-bold uppercase tracking-wider rounded">Complex</span>
+                    )}
+                  </div>
+                  
+                  <div className="grid grid-cols-1 gap-3">
+                    {analysis.eigenvalues.map((val, idx) => (
+                      <div key={idx} className={`p-4 rounded-2xl border-2 flex items-center justify-between ${analysis.isComplex ? 'bg-amber-50 border-amber-100' : 'bg-indigo-50 border-indigo-100'}`}>
+                        <div className="flex items-center space-x-3">
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${analysis.isComplex ? 'bg-amber-200 text-amber-800' : 'bg-indigo-200 text-indigo-800'}`}>
+                            λ{idx + 1}
+                          </div>
+                          <div className="text-xl font-mono font-semibold text-slate-700">
+                            {val}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Stability Info */}
+                <div className="pt-4 border-t border-slate-100">
+                  <p className="text-sm text-slate-500 leading-relaxed">
+                    {analysis.isComplex 
+                      ? "This matrix produces complex eigenvalues, indicating a rotational component in the transformation. It does not have real eigenvectors."
+                      : "Real eigenvalues indicate directions (eigenvectors) that are only scaled, not rotated, by the transformation."}
+                  </p>
+                </div>
+
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+=== BLOCK 2: Vector Field Plot Showing ===
+Description: vector field plot showing stretch/rotation
+
+import React, { useState, useMemo, useEffect, useRef } from 'react';
+
+// --- Math & Types ---
+
+type Matrix2x2 = [[number, number], [number, number]];
+type Vector2 = [number, number];
+
+const PRESETS: Record<string, Matrix2x2> = {
+  'Identity': [[1, 0], [0, 1]],
+  'Rotation (90°)': [[0, -1], [1, 0]],
+  'Rotation (45°)': [[0.707, -0.707], [0.707, 0.707]],
+  'Stretch X': [[2, 0], [0, 1]],
+  'Squash Y': [[1, 0], [0, 0.5]],
+  'Shear X': [[1, 1], [0, 1]],
+  'Projection X': [[1, 0], [0, 0]],
+  'Complex (Spiral)': [[0.8, -0.5], [0.5, 0.8]],
+  'Saddle': [[1.5, 0], [0, 0.5]],
+};
+
+function getDeterminant(m: Matrix2x2): number {
+  return m[0][0] * m[1][1] - m[0][1] * m[1][0];
+}
+
+function getTrace(m: Matrix2x2): number {
+  return m[0][0] + m[1][1];
+}
+
+function getEigen(m: Matrix2x2) {
+  const tr = getTrace(m);
+  const det = getDeterminant(m);
+  const discriminant = tr * tr - 4 * det;
+
+  if (discriminant < 0) {
+    return {
+      type: 'complex',
+      real: tr / 2,
+      imag: Math.sqrt(-discriminant) / 2,
+    };
+  }
+
+  const l1 = (tr + Math.sqrt(discriminant)) / 2;
+  const l2 = (tr - Math.sqrt(discriminant)) / 2;
+
+  const getVector = (lambda: number): Vector2 => {
+    const [a, b] = m[0];
+    const [c, d] = m[1];
+    
+    // Numeric stability guard
+    if (Math.abs(b) > 1e-6) return [b, lambda - a];
+    if (Math.abs(c) > 1e-6) return [lambda - d, c];
+    return [1, 0]; // Diagonal matrix fallback
+  };
+
+  return {
+    type: 'real',
+    l1,
+    l2,
+    v1: getVector(l1),
+    v2: getVector(l2),
+  };
+}
+
+function normalize(v: Vector2): Vector2 {
+  const mag = Math.sqrt(v[0] * v[0] + v[1] * v[1]);
+  if (mag < 1e-6) return [0, 0];
+  return [v[0] / mag, v[1] / mag];
+}
+
+function applyMatrix(m: Matrix2x2, v: Vector2): Vector2 {
+  const x = m[0][0] * v[0] + m[0][1] * v[1];
+  const y = m[1][0] * v[0] + m[1][1] * v[1];
+  // Numeric stability guard
+  return [
+    isNaN(x) || !isFinite(x) ? 0 : Math.max(-1000, Math.min(1000, x)),
+    isNaN(y) || !isFinite(y) ? 0 : Math.max(-1000, Math.min(1000, y))
+  ];
+}
+
+// --- Components ---
+
+export default function App() {
+  const [matrix, setMatrix] = useState<Matrix2x2>(PRESETS['Rotation (45°)']);
+  const [animating, setAnimating] = useState(false);
+  const [particle, setParticle] = useState<Vector2>([2, 0]);
+  
+  const eigen = useMemo(() => getEigen(matrix), [matrix]);
+  const det = useMemo(() => getDeterminant(matrix), [matrix]);
+  const trace = useMemo(() => getTrace(matrix), [matrix]);
+
+  // Animation loop for power iteration
+  useEffect(() => {
+    if (!animating) return;
+    let frameId: number;
+    let lastTime = performance.now();
+
+    const loop = (time: number) => {
+      if (time - lastTime > 500) { // Update every 500ms
+        setParticle(prev => {
+          const next = applyMatrix(matrix, prev);
+          // Prevent exploding to infinity visually
+          const mag = Math.sqrt(next[0]*next[0] + next[1]*next[1]);
+          if (mag > 20) return normalize(next).map(n => n * 20) as Vector2;
+          if (mag < 0.1) return [2, 0]; // Reset if it vanishes
+          return next;
+        });
+        lastTime = time;
+      }
+      frameId = requestAnimationFrame(loop);
+    };
+    frameId = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(frameId);
+  }, [animating, matrix]);
+
+  const handleMatrixChange = (row: number, col: number, val: string) => {
+    const num = parseFloat(val);
+    if (isNaN(num)) return;
+    const newMatrix = [...matrix] as Matrix2x2;
+    newMatrix[row][col] = num;
+    setMatrix(newMatrix);
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-50 text-slate-800 font-sans p-4 md:p-8 flex flex-col items-center">
+      <header className="w-full max-w-6xl mb-8">
+        <h1 className="text-3xl font-light tracking-tight text-slate-900">Eigen Explorer</h1>
+        <p className="text-slate-500 mt-1">Visualize linear transformations and vector fields</p>
+      </header>
+
+      <div className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        {/* Left Panel: Controls */}
+        <div className="flex flex-col gap-6">
+          
+          {/* Matrix Editor */}
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-400 mb-4">Transformation Matrix</h2>
+            <div className="grid grid-cols-2 gap-3 mb-6 relative">
+              <div className="absolute -left-2 top-0 bottom-0 w-1 border-l-2 border-t-2 border-b-2 border-slate-300 rounded-l-md"></div>
+              <div className="absolute -right-2 top-0 bottom-0 w-1 border-r-2 border-t-2 border-b-2 border-slate-300 rounded-r-md"></div>
+              
+              <input type="number" step="0.1" value={matrix[0][0]} onChange={e => handleMatrixChange(0, 0, e.target.value)} className="w-full text-center p-3 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-mono text-lg" />
+              <input type="number" step="0.1" value={matrix[0][1]} onChange={e => handleMatrixChange(0, 1, e.target.value)} className="w-full text-center p-3 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-mono text-lg" />
+              <input type="number" step="0.1" value={matrix[1][0]} onChange={e => handleMatrixChange(1, 0, e.target.value)} className="w-full text-center p-3 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-mono text-lg" />
+              <input type="number" step="0.1" value={matrix[1][1]} onChange={e => handleMatrixChange(1, 1, e.target.value)} className="w-full text-center p-3 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-mono text-lg" />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs font-semibold uppercase tracking-wider text-slate-400">Presets</label>
+              <select 
+                className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+                onChange={(e) => {
+                  if (PRESETS[e.target.value]) setMatrix(PRESETS[e.target.value]);
+                }}
+              >
+                <option value="">Select a preset...</option>
+                {Object.keys(PRESETS).map(key => (
+                  <option key={key} value={key}>{key}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Properties Card */}
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-400 mb-4">Matrix Properties</h2>
+            
+            <div className="grid grid-cols-2 gap-4 mb-6">
+              <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
+                <div className="text-xs text-slate-500 mb-1">Determinant</div>
+                <div className="font-mono text-lg">{det.toFixed(2)}</div>
+                <div className="text-[10px] text-slate-400 mt-1">{det === 0 ? 'Singular (Collapses space)' : det < 0 ? 'Reverses orientation' : 'Preserves orientation'}</div>
+              </div>
+              <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
+                <div className="text-xs text-slate-500 mb-1">Trace</div>
+                <div className="font-mono text-lg">{trace.toFixed(2)}</div>
+              </div>
+            </div>
+
+            <div className="border-t border-slate-100 pt-4">
+              <div className="text-xs text-slate-500 mb-2">Eigenvalues & Eigenvectors</div>
+              {eigen.type === 'real' ? (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between bg-indigo-50/50 p-2 rounded border border-indigo-100">
+                    <span className="font-mono text-sm text-indigo-700">λ₁ = {eigen.l1.toFixed(2)}</span>
+                    <span className="font-mono text-xs text-indigo-500">v₁ = [{eigen.v1[0].toFixed(2)}, {eigen.v1[1].toFixed(2)}]</span>
+                  </div>
+                  <div className="flex items-center justify-between bg-emerald-50/50 p-2 rounded border border-emerald-100">
+                    <span className="font-mono text-sm text-emerald-700">λ₂ = {eigen.l2.toFixed(2)}</span>
+                    <span className="font-mono text-xs text-emerald-500">v₂ = [{eigen.v2[0].toFixed(2)}, {eigen.v2[1].toFixed(2)}]</span>
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-amber-50/50 p-3 rounded border border-amber-100">
+                  <div className="font-mono text-sm text-amber-700 mb-1">
+                    λ = {eigen.real.toFixed(2)} ± {eigen.imag.toFixed(2)}i
+                  </div>
+                  <p className="text-xs text-amber-600 leading-relaxed">
+                    Complex eigenvalues indicate a rotational component. The space is being rotated and scaled, so there are no real eigenvectors (invariant directions).
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+
+        </div>
+
+        {/* Right Panel: Vector Field Visualization */}
+        <div className="lg:col-span-2 bg-white p-2 rounded-2xl shadow-sm border border-slate-200 flex flex-col">
+          <div className="flex justify-between items-center p-4 border-b border-slate-100">
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-400">Vector Field Plot</h2>
+            <button 
+              onClick={() => {
+                if (!animating) setParticle([2, 0]);
+                setAnimating(!animating);
+              }}
+              className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${animating ? 'bg-rose-100 text-rose-700 hover:bg-rose-200' : 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200'}`}
+            >
+              {animating ? 'Stop Iteration' : 'Animate Power Iteration'}
+            </button>
+          </div>
+          
+          <div className="flex-grow relative overflow-hidden bg-[#fafafa] rounded-b-xl flex items-center justify-center p-4">
+            <VectorFieldPlot matrix={matrix} eigen={eigen} particle={animating ? particle : null} />
+          </div>
+        </div>
+
+      </div>
+    </div>
+  );
+}
+
+// --- Vector Field Plot Component ---
+
+interface VectorFieldPlotProps {
+  matrix: Matrix2x2;
+  eigen: ReturnType<typeof getEigen>;
+  particle: Vector2 | null;
+}
+
+function VectorFieldPlot({ matrix, eigen, particle }: VectorFieldPlotProps) {
+  const svgRef = useRef<SVGSVGElement>(null);
+  
+  // Coordinate system setup
+  const size = 600;
+  const center = size / 2;
+  const range = 10; // -10 to 10
+  const scale = size / (range * 2);
+
+  // Map logical coordinates to SVG coordinates
+  const mapX = (x: number) => center + x * scale;
+  const mapY = (y: number) => center - y * scale; // Y is inverted in SVG
+
+  // Generate grid points for the vector field
+  const gridPoints = useMemo(() => {
+    const points: Vector2[] = [];
+    const step = 1.5;
+    for (let x = -range + 1; x <= range - 1; x += step) {
+      for (let y = -range + 1; y <= range - 1; y += step) {
+        if (x !== 0 || y !== 0) {
+          points.push([x, y]);
+        }
+      }
+    }
+    return points;
+  }, [range]);
+
+  return (
+    <svg 
+      ref={svgRef}
+      viewBox={`0 0 ${size} ${size}`} 
+      className="w-full h-auto max-w-[600px] aspect-square drop-shadow-sm"
+      style={{ touchAction: 'none' }}
+    >
+      <defs>
+        {/* Arrowhead marker for vector field */}
+        <marker id="arrowhead" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+          <polygon points="0 0, 6 3, 0 6" fill="currentColor" />
+        </marker>
+        <marker id="arrowhead-particle" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+          <polygon points="0 0, 8 4, 0 8" fill="#e11d48" />
+        </marker>
+      </defs>
+
+      {/* Grid Lines */}
+      <g className="text-slate-200" strokeWidth="1">
+        {Array.from({ length: range * 2 + 1 }).map((_, i) => {
+          const pos = mapX(i - range);
+          return (
+            <React.Fragment key={i}>
+              <line x1={pos} y1={0} x2={pos} y2={size} stroke="currentColor" />
+              <line x1={0} y1={pos} x2={size} y2={pos} stroke="currentColor" />
+            </React.Fragment>
+          );
+        })}
+      </g>
+
+      {/* Axes */}
+      <g className="text-slate-400" strokeWidth="2">
+        <line x1={center} y1={0} x2={center} y2={size} stroke="currentColor" />
+        <line x1={0} y1={center} x2={size} y2={center} stroke="currentColor" />
+      </g>
+
+      {/* Eigenvectors (if real) */}
+      {eigen.type === 'real' && (
+        <g strokeWidth="2" strokeDasharray="6,6" opacity="0.6">
+          {/* Eigenvector 1 */}
+          {(() => {
+            const v1 = normalize(eigen.v1);
+            if (v1[0] === 0 && v1[1] === 0) return null;
+            const ext = range * 2;
+            return (
+              <line 
+                x1={mapX(-v1[0] * ext)} y1={mapY(-v1[1] * ext)} 
+                x2={mapX(v1[0] * ext)} y2={mapY(v1[1] * ext)} 
+                className="text-indigo-500" stroke="currentColor" 
+              />
+            );
+          })()}
+          {/* Eigenvector 2 */}
+          {(() => {
+            const v2 = normalize(eigen.v2);
+            if (v2[0] === 0 && v2[1] === 0) return null;
+            const ext = range * 2;
+            return (
+              <line 
+                x1={mapX(-v2[0] * ext)} y1={mapY(-v2[1] * ext)} 
+                x2={mapX(v2[0] * ext)} y2={mapY(v2[1] * ext)} 
+                className="text-emerald-500" stroke="currentColor" 
+              />
+            );
+          })()}
+        </g>
+      )}
+
+      {/* Vector Field */}
+      <g>
+        {gridPoints.map((pt, i) => {
+          const transformed = applyMatrix(matrix, pt);
+          
+          // We plot the displacement vector (transformed - original) scaled down for visibility
+          const dx = transformed[0] - pt[0];
+          const dy = transformed[1] - pt[1];
+          
+          // Visual scaling factor for the arrows to prevent too much overlap
+          const arrowScale = 0.25;
+          
+          const startX = mapX(pt[0]);
+          const startY = mapY(pt[1]);
+          const endX = mapX(pt[0] + dx * arrowScale);
+          const endY = mapY(pt[1] + dy * arrowScale);
+
+          // Calculate magnitude of transformation to color code
+          const mag = Math.sqrt(dx*dx + dy*dy);
+          const maxExpectedMag = range * 2;
+          const intensity = Math.min(1, mag / maxExpectedMag);
+          
+          // Color gradient from slate to blue based on intensity
+          const r = Math.round(148 - intensity * 100);
+          const g = Math.round(163 - intensity * 50);
+          const b = Math.round(184 + intensity * 71);
+
+          // Skip drawing if the vector is extremely small
+          if (mag < 0.1) {
+            return <circle key={i} cx={startX} cy={startY} r="1.5" fill={`rgb(${r},${g},${b})`} />;
+          }
+
+          return (
+            <line 
+              key={i}
+              x1={startX} 
+              y1={startY} 
+              x2={endX} 
+              y2={endY} 
+              stroke={`rgb(${r},${g},${b})`}
+              strokeWidth="1.5"
+              markerEnd="url(#arrowhead)"
+              className="transition-all duration-300 ease-out"
+            />
+          );
+        })}
+      </g>
+
+      {/* Unit Circle Transformation */}
+      <g fill="none" strokeWidth="2" opacity="0.4">
+        {/* Original Unit Circle */}
+        <circle cx={center} cy={center} r={scale * 2} stroke="#94a3b8" strokeDasharray="4,4" />
+        
+        {/* Transformed Unit Circle (Ellipse) */}
+        <polygon 
+          points={Array.from({ length: 60 }).map((_, i) => {
+            const angle = (i / 60) * Math.PI * 2;
+            const x = Math.cos(angle) * 2;
+            const y = Math.sin(angle) * 2;
+            const [tx, ty] = applyMatrix(matrix, [x, y]);
+            return `${mapX(tx)},${mapY(ty)}`;
+          }).join(' ')}
+          stroke="#6366f1"
+          fill="rgba(99, 102, 241, 0.05)"
+          className="transition-all duration-300 ease-out"
+        />
+      </g>
+
+      {/* Particle Animation (Power Iteration) */}
+      {particle && (
+        <g>
+          <line 
+            x1={center} 
+            y1={center} 
+            x2={mapX(particle[0])} 
+            y2={mapY(particle[1])} 
+            stroke="#e11d48" 
+            strokeWidth="2.5"
+            markerEnd="url(#arrowhead-particle)"
+            className="transition-all duration-500 ease-in-out"
+          />
+          <circle 
+            cx={mapX(particle[0])} 
+            cy={mapY(particle[1])} 
+            r="4" 
+            fill="#be123c" 
+            className="transition-all duration-500 ease-in-out"
+          />
+        </g>
+      )}
+    </svg>
+  );
+}
+
+
+=== BLOCK 3: Animate Power Iteration Convergence ===
+Description: animate power iteration convergence
+
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+
+// Dependencies: React, Tailwind CSS (standard classes)
+// No external math libraries used.
+
+type Vector2 = [number, number];
+type Matrix2x2 = [[number, number], [number, number]];
+
+const INITIAL_VECTOR: Vector2 = [1, 0.5];
+
+const PRESETS: Record<string, Matrix2x2> = {
+  'Stretch (Real)': [[1.05, 0.1], [0.1, 1.02]],
+  'Rotation (Complex)': [[0.95, -0.2], [0.2, 0.95]],
+  'Shear': [[1, 0.1], [0, 1]],
+  'Saddle (Unstable)': [[1.05, 0], [0, 0.95]],
+  'Convergence': [[0.8, 0.1], [0.1, 0.7]],
+};
+
+export default function App() {
+  const [matrix, setMatrix] = useState<Matrix2x2>(PRESETS['Stretch (Real)']);
+  const [vector, setVector] = useState<Vector2>(INITIAL_VECTOR);
+  const [history, setHistory] = useState<Vector2[]>([INITIAL_VECTOR]);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [speed, setSpeed] = useState(500);
+
+  // Math Helpers
+  const multiply = useCallback((m: Matrix2x2, v: Vector2): Vector2 => {
+    return [
+      m[0][0] * v[0] + m[0][1] * v[1],
+      m[1][0] * v[0] + m[1][1] * v[1]
+    ];
+  }, []);
+
+  const magnitude = (v: Vector2) => Math.sqrt(v[0] * v[0] + v[1] * v[1]);
+
+  const normalize = useCallback((v: Vector2): Vector2 => {
+    const mag = magnitude(v);
+    // Numeric stability guard
+    if (mag < 1e-10) return [1, 0];
+    return [v[0] / mag, v[1] / mag];
+  }, []);
+
+  // Matrix Stats Calculation
+  const stats = useMemo(() => {
+    const [[a, b], [c, d]] = matrix;
+    const trace = a + d;
+    const det = a * d - b * c;
+    const discriminant = trace * trace - 4 * det;
+    
+    let eigenvalues: string[] = [];
+    let isComplex = false;
+    let dominantEigenvector: Vector2 | null = null;
+    let maxMagnitude = 0;
+
+    if (discriminant >= 0) {
+      const l1 = (trace + Math.sqrt(discriminant)) / 2;
+      const l2 = (trace - Math.sqrt(discriminant)) / 2;
+      eigenvalues = [l1.toFixed(3), l2.toFixed(3)];
+      maxMagnitude = Math.max(Math.abs(l1), Math.abs(l2));
+      
+      // Calculate dominant eigenvector analytically for reference
+      const dominantLambda = Math.abs(l1) > Math.abs(l2) ? l1 : l2;
+      if (Math.abs(b) > 1e-6) {
+        dominantEigenvector = normalize([b, dominantLambda - a]);
+      } else if (Math.abs(c) > 1e-6) {
+        dominantEigenvector = normalize([dominantLambda - d, c]);
+      } else {
+        dominantEigenvector = dominantLambda === a ? [1, 0] : [0, 1];
+      }
+    } else {
+      isComplex = true;
+      const real = (trace / 2).toFixed(3);
+      const imag = (Math.sqrt(-discriminant) / 2).toFixed(3);
+      eigenvalues = [`${real} + ${imag}i`, `${real} - ${imag}i`];
+      maxMagnitude = Math.sqrt((trace/2)**2 + (-discriminant/4));
+    }
+
+    // Discrete time stability (Iterative multiplication)
+    let stability = 'Neutral';
+    if (maxMagnitude < 0.99) stability = 'Stable (Converges to 0)';
+    else if (maxMagnitude > 1.01) stability = 'Unstable (Diverges)';
+
+    return { trace, det, discriminant, eigenvalues, isComplex, dominantEigenvector, stability, maxMagnitude };
+  }, [matrix, normalize]);
+
+  // Power Iteration Step
+  const step = useCallback(() => {
+    setVector(prev => {
+      const nextRaw = multiply(matrix, prev);
+      const nextNorm = normalize(nextRaw);
+      setHistory(h => [...h.slice(-50), nextNorm]); // Keep last 50 steps
+      return nextNorm;
+    });
+  }, [matrix, multiply, normalize]);
+
+  const reset = useCallback(() => {
+    setVector(INITIAL_VECTOR);
+    setHistory([INITIAL_VECTOR]);
+    setIsPlaying(false);
+  }, []);
+
+  // Animation Loop
+  useEffect(() => {
+    let interval: number;
+    if (isPlaying) {
+      interval = window.setInterval(step, speed);
+    }
+    return () => clearInterval(interval);
+  }, [isPlaying, step, speed]);
+
+  // Handle Matrix Input
+  const handleMatrixChange = (row: number, col: number, val: string) => {
+    const num = parseFloat(val);
+    if (isNaN(num)) return;
+    const newMatrix = [...matrix] as Matrix2x2;
+    newMatrix[row][col] = num;
+    setMatrix(newMatrix);
+    reset();
+  };
+
+  // SVG Coordinate Mapping
+  const scale = 120;
+  const center = 200;
+  const mapX = (x: number) => center + x * scale;
+  const mapY = (y: number) => center - y * scale;
+
+  // Generate Vector Field
+  const vectorField = useMemo(() => {
+    const lines = [];
+    for (let x = -1.5; x <= 1.5; x += 0.3) {
+      for (let y = -1.5; y <= 1.5; y += 0.3) {
+        if (x === 0 && y === 0) continue;
+        const [nx, ny] = multiply(matrix, [x, y]);
+        const mag = magnitude([nx, ny]);
+        // Scale down the field vectors for visualization
+        const drawLen = 0.08; 
+        const dx = (nx / mag) * drawLen;
+        const dy = (ny / mag) * drawLen;
+        lines.push(
+          <line
+            key={`vf-${x}-${y}`}
+            x1={mapX(x)} y1={mapY(y)}
+            x2={mapX(x + dx)} y2={mapY(y + dy)}
+            stroke="#cbd5e1" strokeWidth="1"
+            opacity="0.5"
+          />
+        );
+      }
+    }
+    return lines;
+  }, [matrix, multiply]);
+
+  return (
+    <div className="min-h-screen bg-slate-50 text-slate-800 font-sans p-4 md:p-8 flex flex-col items-center">
+      <header className="w-full max-w-6xl mb-8">
+        <h1 className="text-3xl font-light tracking-tight text-slate-900">Eigen Explorer</h1>
+        <p className="text-slate-500 mt-1">Visualize power iteration and linear transformations</p>
+      </header>
+
+      <div className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-12 gap-8">
+        
+        {/* Left Panel: Controls & Stats */}
+        <div className="lg:col-span-4 space-y-6">
+          
+          {/* Matrix Editor */}
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+            <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4">Matrix Editor</h2>
+            <div className="grid grid-cols-2 gap-3 mb-6">
+              <input type="number" step="0.1" value={matrix[0][0]} onChange={e => handleMatrixChange(0, 0, e.target.value)} className="w-full text-center p-3 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-mono text-lg" />
+              <input type="number" step="0.1" value={matrix[0][1]} onChange={e => handleMatrixChange(0, 1, e.target.value)} className="w-full text-center p-3 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-mono text-lg" />
+              <input type="number" step="0.1" value={matrix[1][0]} onChange={e => handleMatrixChange(1, 0, e.target.value)} className="w-full text-center p-3 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-mono text-lg" />
+              <input type="number" step="0.1" value={matrix[1][1]} onChange={e => handleMatrixChange(1, 1, e.target.value)} className="w-full text-center p-3 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-mono text-lg" />
+            </div>
+
+            <div className="flex flex-wrap gap-2 mb-6">
+              {Object.entries(PRESETS).map(([name, mat]) => (
+                <button
+                  key={name}
+                  onClick={() => { setMatrix(mat); reset(); }}
+                  className="text-xs px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-full transition-colors"
+                >
+                  {name}
+                </button>
+              ))}
+            </div>
+
+            {/* Playback Controls */}
+            <div className="flex items-center justify-between pt-4 border-t border-slate-100">
+              <div className="flex gap-2">
+                <button onClick={() => setIsPlaying(!isPlaying)} className={`px-4 py-2 rounded-lg font-medium transition-colors ${isPlaying ? 'bg-amber-100 text-amber-700 hover:bg-amber-200' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}>
+                  {isPlaying ? 'Pause' : 'Animate'}
+                </button>
+                <button onClick={step} disabled={isPlaying} className="px-4 py-2 bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-lg font-medium disabled:opacity-50 transition-colors">
+                  Step
+                </button>
+                <button onClick={reset} className="px-4 py-2 bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-lg font-medium transition-colors">
+                  Reset
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Stats Card */}
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+            <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4">Properties</h2>
+            <div className="space-y-4 text-sm">
+              <div className="flex justify-between border-b border-slate-50 pb-2">
+                <span className="text-slate-500">Determinant</span>
+                <span className="font-mono font-medium">{stats.det.toFixed(3)}</span>
+              </div>
+              <div className="flex justify-between border-b border-slate-50 pb-2">
+                <span className="text-slate-500">Trace</span>
+                <span className="font-mono font-medium">{stats.trace.toFixed(3)}</span>
+              </div>
+              <div className="flex justify-between border-b border-slate-50 pb-2">
+                <span className="text-slate-500">Eigenvalues (λ)</span>
+                <div className="text-right font-mono font-medium text-indigo-600">
+                  <div>λ₁ = {stats.eigenvalues[0]}</div>
+                  <div>λ₂ = {stats.eigenvalues[1]}</div>
+                </div>
+              </div>
+              <div className="flex justify-between pt-1">
+                <span className="text-slate-500">System Stability</span>
+                <span className={`font-medium ${stats.stability.includes('Stable') ? 'text-emerald-600' : stats.stability.includes('Unstable') ? 'text-rose-500' : 'text-amber-500'}`}>
+                  {stats.stability}
+                </span>
+              </div>
+            </div>
+
+            {stats.isComplex && (
+              <div className="mt-4 p-3 bg-indigo-50 border border-indigo-100 rounded-lg text-xs text-indigo-800 leading-relaxed">
+                <strong>Complex Eigenvalues:</strong> This matrix induces a rotation. Power iteration will not converge to a single real vector, but will orbit continuously.
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Right Panel: Visualization */}
+        <div className="lg:col-span-8 bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden relative flex items-center justify-center min-h-[500px]">
+          
+          {/* Grid Background Pattern (CSS) */}
+          <div className="absolute inset-0 opacity-[0.03] pointer-events-none" 
+               style={{ backgroundImage: 'linear-gradient(#000 1px, transparent 1px), linear-gradient(90deg, #000 1px, transparent 1px)', backgroundSize: '20px 20px' }}>
+          </div>
+
+          <svg width="400" height="400" className="overflow-visible">
+            {/* Axes */}
+            <line x1="0" y1="200" x2="400" y2="200" stroke="#e2e8f0" strokeWidth="2" />
+            <line x1="200" y1="0" x2="200" y2="400" stroke="#e2e8f0" strokeWidth="2" />
+            
+            {/* Unit Circle */}
+            <circle cx="200" cy="200" r={scale} fill="none" stroke="#f1f5f9" strokeWidth="2" strokeDasharray="4 4" />
+
+            {/* Vector Field */}
+            {vectorField}
+
+            {/* Dominant Eigenvector Reference Line */}
+            {stats.dominantEigenvector && !stats.isComplex && (
+              <line 
+                x1={mapX(-stats.dominantEigenvector[0] * 2)} 
+                y1={mapY(-stats.dominantEigenvector[1] * 2)} 
+                x2={mapX(stats.dominantEigenvector[0] * 2)} 
+                y2={mapY(stats.dominantEigenvector[1] * 2)} 
+                stroke="#10b981" strokeWidth="2" strokeDasharray="6 6" opacity="0.4"
+              />
+            )}
+
+            {/* History Path */}
+            {history.length > 1 && (
+              <polyline
+                points={history.map(v => `${mapX(v[0])},${mapY(v[1])}`).join(' ')}
+                fill="none"
+                stroke="#818cf8"
+                strokeWidth="2"
+                opacity="0.4"
+                strokeLinejoin="round"
+              />
+            )}
+
+            {/* History Dots */}
+            {history.map((v, i) => (
+              <circle 
+                key={i} 
+                cx={mapX(v[0])} 
+                cy={mapY(v[1])} 
+                r="3" 
+                fill="#6366f1" 
+                opacity={0.1 + (i / history.length) * 0.5} 
+              />
+            ))}
+
+            {/* Current Vector */}
+            <line 
+              x1="200" y1="200" 
+              x2={mapX(vector[0])} y2={mapY(vector[1])} 
+              stroke="#4f46e5" strokeWidth="3" strokeLinecap="round"
+            />
+            
+            {/* Arrow Head */}
+            <polygon 
+              points="0,-5 10,0 0,5" 
+              fill="#4f46e5"
+              transform={`translate(${mapX(vector[0])}, ${mapY(vector[1])}) rotate(${Math.atan2(-vector[1], vector[0]) * 180 / Math.PI})`}
+            />
+          </svg>
+
+          {/* Legend Overlay */}
+          <div className="absolute bottom-4 right-4 bg-white/90 backdrop-blur p-3 rounded-lg border border-slate-100 text-xs text-slate-500 shadow-sm">
+            <div className="flex items-center gap-2 mb-1">
+              <div className="w-3 h-0.5 bg-indigo-600"></div> Current Vector (Normalized)
+            </div>
+            <div className="flex items-center gap-2 mb-1">
+              <div className="w-3 h-0.5 bg-indigo-300"></div> Iteration History
+            </div>
+            {!stats.isComplex && (
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-0.5 bg-emerald-500 border-t border-dashed border-emerald-500"></div> Dominant Eigenvector
+              </div>
+            )}
+          </div>
+
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+=== BLOCK 4: Show Determinant/Trace And Stability ===
+Description: show determinant/trace and stability region
+
+import React, { useState, useMemo } from 'react';
+
+// --- Numeric Guard & Math Utilities ---
+const EPSILON = 1e-9;
+const clean = (val: number) => (Math.abs(val) < EPSILON ? 0 : val);
+
+type Matrix2x2 = { a: number; b: number; c: number; d: number };
+
+const PRESETS: Record<string, Matrix2x2> = {
+  'Stable Node (Sink)': { a: -2, b: 0, c: 0, d: -3 },
+  'Unstable Node (Source)': { a: 2, b: 1, c: 0, d: 3 },
+  'Saddle Point': { a: 1, b: 2, c: 3, d: 1 },
+  'Stable Spiral': { a: -1, b: -2, c: 2, d: -1 },
+  'Unstable Spiral': { a: 1, b: -2, c: 2, d: 1 },
+  'Center': { a: 0, b: -3, c: 3, d: 0 },
+  'Degenerate Node': { a: -2, b: 1, c: 0, d: -2 },
+};
+
+export default function App() {
+  const [matrix, setMatrix] = useState<Matrix2x2>(PRESETS['Stable Spiral']);
+
+  // --- Derived Math Calculations ---
+  const stats = useMemo(() => {
+    const { a, b, c, d } = matrix;
+    const T = clean(a + d);
+    const Det = clean(a * d - b * c);
+    const Disc = clean(T * T - 4 * Det);
+
+    let classification = '';
+    let stability = '';
+    let color = '';
+
+    if (Det < 0) {
+      classification = 'Saddle Point';
+      stability = 'Unstable';
+      color = 'text-rose-500';
+    } else if (Det === 0) {
+      classification = 'Line of Fixed Points';
+      stability = 'Marginal';
+      color = 'text-amber-500';
+    } else {
+      if (Disc > 0) {
+        if (T < 0) {
+          classification = 'Stable Node (Sink)';
+          stability = 'Asymptotically Stable';
+          color = 'text-emerald-500';
+        } else if (T > 0) {
+          classification = 'Unstable Node (Source)';
+          stability = 'Unstable';
+          color = 'text-rose-500';
+        }
+      } else if (Disc < 0) {
+        if (T < 0) {
+          classification = 'Stable Spiral (Sink)';
+          stability = 'Asymptotically Stable';
+          color = 'text-emerald-500';
+        } else if (T > 0) {
+          classification = 'Unstable Spiral (Source)';
+          stability = 'Unstable';
+          color = 'text-rose-500';
+        } else {
+          classification = 'Center';
+          stability = 'Neutrally Stable';
+          color = 'text-blue-500';
+        }
+      } else {
+        if (T < 0) {
+          classification = 'Degenerate Stable Node';
+          stability = 'Asymptotically Stable';
+          color = 'text-emerald-500';
+        } else if (T > 0) {
+          classification = 'Degenerate Unstable Node';
+          stability = 'Unstable';
+          color = 'text-rose-500';
+        } else {
+          classification = 'Origin';
+          stability = 'Marginal';
+          color = 'text-gray-500';
+        }
+      }
+    }
+
+    let eigsStr = '';
+    if (Disc >= 0) {
+      const l1 = clean((T + Math.sqrt(Disc)) / 2);
+      const l2 = clean((T - Math.sqrt(Disc)) / 2);
+      eigsStr = `λ₁ = ${l1.toFixed(2)}, λ₂ = ${l2.toFixed(2)}`;
+    } else {
+      const real = clean(T / 2);
+      const imag = clean(Math.sqrt(-Disc) / 2);
+      eigsStr = `λ = ${real.toFixed(2)} ± ${imag.toFixed(2)}i`;
+    }
+
+    return { T, Det, Disc, classification, stability, color, eigsStr };
+  }, [matrix]);
+
+  // --- Handlers ---
+  const handleMatrixChange = (key: keyof Matrix2x2, value: string) => {
+    const num = parseFloat(value);
+    setMatrix((prev) => ({ ...prev, [key]: isNaN(num) ? 0 : num }));
+  };
+
+  // --- SVG Plot Configuration ---
+  const SVG_SIZE = 400;
+  const DOMAIN = 8; // from -8 to 8
+  const mapToSvg = (t: number, d: number) => {
+    const x = (t / DOMAIN) * (SVG_SIZE / 2) + SVG_SIZE / 2;
+    const y = SVG_SIZE / 2 - (d / DOMAIN) * (SVG_SIZE / 2);
+    return { x, y };
+  };
+
+  // Generate Parabola Path (Det = T^2 / 4)
+  const parabolaPoints = [];
+  for (let t = -DOMAIN; t <= DOMAIN; t += 0.2) {
+    const d = (t * t) / 4;
+    const { x, y } = mapToSvg(t, d);
+    parabolaPoints.push(`${x},${y}`);
+  }
+  const parabolaPath = `M ${parabolaPoints.join(' L ')}`;
+
+  const currentPoint = mapToSvg(stats.T, stats.Det);
+
+  return (
+    <div className="min-h-screen bg-slate-50 text-slate-800 font-sans p-4 md:p-8 flex items-center justify-center">
+      {/* Background Grid Pattern */}
+      <div
+        className="fixed inset-0 pointer-events-none opacity-40"
+        style={{
+          backgroundImage: 'radial-gradient(#94a3b8 1px, transparent 1px)',
+          backgroundSize: '24px 24px',
+        }}
+      />
+
+      <div className="relative w-full max-w-6xl grid grid-cols-1 lg:grid-cols-12 gap-8 z-10">
+        
+        {/* LEFT COLUMN: Controls & Stats */}
+        <div className="lg:col-span-5 space-y-6">
+          {/* Header */}
+          <div className="bg-white/80 backdrop-blur-md p-6 rounded-2xl shadow-sm border border-slate-200">
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900 mb-2">
+              Stability & Trace-Determinant
+            </h1>
+            <p className="text-sm text-slate-600">
+              Explore how a 2x2 matrix's trace (<span className="font-serif italic">T</span>) and determinant (<span className="font-serif italic">Δ</span>) completely classify the stability of its origin in a dynamic system.
+            </p>
+          </div>
+
+          {/* Matrix Editor */}
+          <div className="bg-white/80 backdrop-blur-md p-6 rounded-2xl shadow-sm border border-slate-200">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-500">Matrix Editor</h2>
+              <select
+                className="text-sm bg-slate-100 border-none rounded-md px-3 py-1.5 focus:ring-2 focus:ring-indigo-500 outline-none cursor-pointer"
+                onChange={(e) => setMatrix(PRESETS[e.target.value])}
+                defaultValue="Stable Spiral"
+              >
+                {Object.keys(PRESETS).map((key) => (
+                  <option key={key} value={key}>
+                    {key}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex justify-center my-6">
+              <div className="relative inline-block">
+                <div className="absolute -left-3 top-0 bottom-0 w-2 border-t-2 border-b-2 border-l-2 border-slate-800 rounded-l-sm" />
+                <div className="absolute -right-3 top-0 bottom-0 w-2 border-t-2 border-b-2 border-r-2 border-slate-800 rounded-r-sm" />
+                
+                <div className="grid grid-cols-2 gap-4 p-2">
+                  {(['a', 'b', 'c', 'd'] as const).map((key) => (
+                    <input
+                      key={key}
+                      type="number"
+                      step="0.1"
+                      value={matrix[key]}
+                      onChange={(e) => handleMatrixChange(key, e.target.value)}
+                      className="w-20 text-center text-lg font-mono bg-slate-50 border border-slate-200 rounded-md py-2 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition-all"
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Statistics Card */}
+          <div className="bg-white/80 backdrop-blur-md p-6 rounded-2xl shadow-sm border border-slate-200">
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-500 mb-4">System Properties</h2>
+            
+            <div className="grid grid-cols-2 gap-4 mb-6">
+              <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                <div className="text-xs text-slate-500 mb-1">Trace (T = a + d)</div>
+                <div className="text-xl font-mono font-medium">{stats.T.toFixed(2)}</div>
+              </div>
+              <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                <div className="text-xs text-slate-500 mb-1">Determinant (Δ = ad - bc)</div>
+                <div className="text-xl font-mono font-medium">{stats.Det.toFixed(2)}</div>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <div className="text-xs text-slate-500 mb-1">Eigenvalues</div>
+                <div className="text-md font-mono bg-slate-100 px-3 py-2 rounded-lg inline-block">
+                  {stats.eigsStr}
+                </div>
+              </div>
+              
+              <div>
+                <div className="text-xs text-slate-500 mb-1">Classification</div>
+                <div className={`text-lg font-bold ${stats.color}`}>
+                  {stats.classification}
+                </div>
+                <div className="text-sm text-slate-600 mt-0.5">
+                  {stats.stability}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* RIGHT COLUMN: Trace-Determinant Plane */}
+        <div className="lg:col-span-7 bg-white/90 backdrop-blur-xl p-6 rounded-3xl shadow-xl border border-slate-200 flex flex-col items-center justify-center">
+          <h2 className="text-lg font-bold text-slate-800 mb-6 w-full text-center">Trace-Determinant Plane</h2>
+          
+          <div className="relative" style={{ width: SVG_SIZE, height: SVG_SIZE }}>
+            <svg width={SVG_SIZE} height={SVG_SIZE} className="overflow-visible">
+              {/* Regions Shading */}
+              {/* Saddle Region (Det < 0) */}
+              <rect x="0" y={SVG_SIZE / 2} width={SVG_SIZE} height={SVG_SIZE / 2} fill="#ffe4e6" opacity="0.4" />
+              
+              {/* Nodes Region (Inside Parabola, Det > 0) */}
+              <path d={`M 0 ${SVG_SIZE/2} L 0 0 L ${SVG_SIZE} 0 L ${SVG_SIZE} ${SVG_SIZE/2} Z`} fill="#dcfce7" opacity="0.3" />
+              
+              {/* Spirals Region (Under Parabola, Det > 0) */}
+              <path d={`M 0 ${SVG_SIZE/2} L ${parabolaPoints.join(' L ')} L ${SVG_SIZE} ${SVG_SIZE/2} Z`} fill="#e0e7ff" opacity="0.6" />
+
+              {/* Grid Lines */}
+              {Array.from({ length: DOMAIN * 2 + 1 }).map((_, i) => {
+                const val = i - DOMAIN;
+                const pos = (i / (DOMAIN * 2)) * SVG_SIZE;
+                const isAxis = val === 0;
+                return (
+                  <g key={`grid-${i}`}>
+                    <line x1={pos} y1="0" x2={pos} y2={SVG_SIZE} stroke={isAxis ? "#94a3b8" : "#e2e8f0"} strokeWidth={isAxis ? 2 : 1} />
+                    <line x1="0" y1={pos} x2={SVG_SIZE} y2={pos} stroke={isAxis ? "#94a3b8" : "#e2e8f0"} strokeWidth={isAxis ? 2 : 1} />
+                  </g>
+                );
+              })}
+
+              {/* Parabola Curve (Det = T^2 / 4) */}
+              <path
+                d={parabolaPath}
+                fill="none"
+                stroke="#64748b"
+                strokeWidth="2"
+                strokeDasharray="6 4"
+              />
+
+              {/* Axis Labels */}
+              <text x={SVG_SIZE - 10} y={SVG_SIZE / 2 - 10} fontSize="12" fill="#64748b" textAnchor="end" className="font-serif italic font-bold">Trace (T)</text>
+              <text x={SVG_SIZE / 2 + 10} y="15" fontSize="12" fill="#64748b" className="font-serif italic font-bold">Det (Δ)</text>
+              <text x={SVG_SIZE / 2 + 10} y={SVG_SIZE / 2 - 10} fontSize="10" fill="#94a3b8">0</text>
+
+              {/* Parabola Label */}
+              <text x={SVG_SIZE * 0.8} y={SVG_SIZE * 0.15} fontSize="12" fill="#64748b" transform={`rotate(-45 ${SVG_SIZE * 0.8} ${SVG_SIZE * 0.15})`}>
+                Δ = T² / 4
+              </text>
+
+              {/* Current Point Marker */}
+              <g transform={`translate(${currentPoint.x}, ${currentPoint.y})`}>
+                <circle r="12" fill="currentColor" className={`${stats.color} opacity-20 animate-ping`} />
+                <circle r="6" fill="currentColor" className={`${stats.color} shadow-sm`} />
+                <circle r="2" fill="#fff" />
+                
+                {/* Tooltip-like label */}
+                <g transform="translate(10, -10)">
+                  <rect x="0" y="-16" width="70" height="20" rx="4" fill="#1e293b" opacity="0.8" />
+                  <text x="35" y="-3" fontSize="10" fill="#fff" textAnchor="middle" className="font-mono">
+                    ({stats.T.toFixed(1)}, {stats.Det.toFixed(1)})
+                  </text>
+                </g>
+              </g>
+            </svg>
+          </div>
+
+          {/* Legend */}
+          <div className="mt-8 flex flex-wrap justify-center gap-4 text-xs text-slate-600">
+            <div className="flex items-center gap-1.5">
+              <div className="w-3 h-3 rounded-full bg-emerald-100 border border-emerald-300"></div>
+              <span>Stable Nodes</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-3 h-3 rounded-full bg-indigo-100 border border-indigo-300"></div>
+              <span>Spirals</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-3 h-3 rounded-full bg-rose-100 border border-rose-300"></div>
+              <span>Saddles</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-4 h-0 border-t-2 border-dashed border-slate-500"></div>
+              <span>Degenerate Nodes</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  );
+}
+
+
+=== BLOCK 5: Complex Eigenvalues Explanation Card ===
+Description: complex eigenvalues explanation card.
+
+import React, { useState, useEffect, useMemo } from 'react';
+
+export default function App() {
+  // State for the real (a) and imaginary (b) parts of the eigenvalue
+  const [a, setA] = useState<number>(0.95);
+  const [b, setB] = useState<number>(0.3);
+  const [animStep, setAnimStep] = useState<number>(0);
+
+  // Derived mathematical properties
+  const magnitude = Math.sqrt(a * a + b * b);
+  const angleRad = Math.atan2(b, a);
+  const angleDeg = angleRad * (180 / Math.PI);
+
+  // Generate trajectory points for the vector field visualization
+  const trajectory = useMemo(() => {
+    const points = [];
+    let cx = 2; // Starting x
+    let cy = 0; // Starting y
+    
+    for (let i = 0; i < 60; i++) {
+      points.push({ x: cx, y: cy });
+      
+      // Apply the transformation matrix [a, -b; b, a]
+      const nx = a * cx - b * cy;
+      const ny = b * cx + a * cy;
+      
+      cx = nx;
+      cy = ny;
+
+      // Numeric stability guard: prevent infinite expansion from breaking SVG
+      if (Math.abs(cx) > 100 || Math.abs(cy) > 100) {
+        break;
+      }
+    }
+    return points;
+  }, [a, b]);
+
+  // Animation loop
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setAnimStep((prev) => {
+        if (trajectory.length === 0) return 0;
+        return (prev + 1) % trajectory.length;
+      });
+    }, 150);
+    return () => clearInterval(timer);
+  }, [trajectory.length]);
+
+  // SVG Coordinate mapping helpers
+  const svgSize = 300;
+  const center = svgSize / 2;
+  const scale = 20; // 20px per unit
+
+  const mapX = (x: number) => center + x * scale;
+  const mapY = (y: number) => center - y * scale; // Invert Y for standard Cartesian
+
+  // Determine system behavior text
+  let behaviorTitle = "";
+  let behaviorDesc = "";
+  let statusColor = "";
+
+  if (b === 0) {
+    behaviorTitle = "Purely Real";
+    behaviorDesc = "No imaginary component. The system scales without rotation.";
+    statusColor = "text-slate-500";
+  } else if (Math.abs(magnitude - 1) < 0.01) {
+    behaviorTitle = "Pure Rotation (Center)";
+    behaviorDesc = "Magnitude is exactly 1. The system rotates continuously without growing or shrinking.";
+    statusColor = "text-blue-500";
+  } else if (magnitude < 1) {
+    behaviorTitle = "Spiral Sink (Stable)";
+    behaviorDesc = "Magnitude < 1. The system rotates and contracts towards the origin.";
+    statusColor = "text-emerald-500";
+  } else {
+    behaviorTitle = "Spiral Source (Unstable)";
+    behaviorDesc = "Magnitude > 1. The system rotates and expands away from the origin.";
+    statusColor = "text-rose-500";
+  }
+
+  return (
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 font-sans relative overflow-hidden">
+      {/* Grid Background */}
+      <div 
+        className="absolute inset-0 pointer-events-none opacity-20"
+        style={{
+          backgroundImage: `linear-gradient(to right, #94a3b8 1px, transparent 1px), linear-gradient(to bottom, #94a3b8 1px, transparent 1px)`,
+          backgroundSize: '40px 40px'
+        }}
+      />
+
+      {/* Main Card */}
+      <div className="bg-white/90 backdrop-blur-md shadow-2xl rounded-3xl border border-slate-200 w-full max-w-4xl flex flex-col md:flex-row overflow-hidden relative z-10">
+        
+        {/* Left Column: Visualization */}
+        <div className="bg-slate-900 p-8 flex flex-col items-center justify-center relative border-b md:border-b-0 md:border-r border-slate-700 w-full md:w-1/2">
+          <h2 className="text-white text-xl font-semibold mb-6 tracking-wide">Phase Portrait</h2>
+          
+          <div className="relative bg-slate-800 rounded-2xl shadow-inner p-4 border border-slate-700">
+            <svg width={svgSize} height={svgSize} className="overflow-visible">
+              {/* Axes */}
+              <line x1={0} y1={center} x2={svgSize} y2={center} stroke="#475569" strokeWidth="1" />
+              <line x1={center} y1={0} x2={center} y2={svgSize} stroke="#475569" strokeWidth="1" />
+              
+              {/* Grid ticks */}
+              {[-5, -4, -3, -2, -1, 1, 2, 3, 4, 5].map(tick => (
+                <React.Fragment key={tick}>
+                  <line x1={mapX(tick)} y1={center - 3} x2={mapX(tick)} y2={center + 3} stroke="#475569" strokeWidth="1" />
+                  <line x1={center - 3} y1={mapY(tick)} x2={center + 3} y2={mapY(tick)} stroke="#475569" strokeWidth="1" />
+                </React.Fragment>
+              ))}
+
+              {/* Trajectory Path */}
+              {trajectory.length > 1 && (
+                <polyline
+                  points={trajectory.map(p => `${mapX(p.x)},${mapY(p.y)}`).join(' ')}
+                  fill="none"
+                  stroke="#3b82f6"
+                  strokeWidth="2"
+                  strokeOpacity="0.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              )}
+
+              {/* Animated Vector */}
+              {trajectory[animStep] && (
+                <g>
+                  <line 
+                    x1={center} 
+                    y1={center} 
+                    x2={mapX(trajectory[animStep].x)} 
+                    y2={mapY(trajectory[animStep].y)} 
+                    stroke="#60a5fa" 
+                    strokeWidth="2"
+                    strokeDasharray="4 2"
+                  />
+                  <circle 
+                    cx={mapX(trajectory[animStep].x)} 
+                    cy={mapY(trajectory[animStep].y)} 
+                    r="5" 
+                    fill="#60a5fa" 
+                    className="shadow-glow"
+                  />
+                </g>
+              )}
+            </svg>
+          </div>
+
+          <div className="mt-6 text-slate-400 text-sm text-center">
+            Tracing the path of a vector under repeated multiplication by the matrix.
+          </div>
+        </div>
+
+        {/* Right Column: Explanation & Controls */}
+        <div className="p-8 flex flex-col w-full md:w-1/2">
+          <div className="mb-6">
+            <h1 className="text-3xl font-bold text-slate-800 mb-2">Complex Eigenvalues</h1>
+            <p className="text-slate-600 leading-relaxed">
+              When a 2x2 matrix has complex eigenvalues <span className="font-mono bg-slate-100 px-1 rounded text-sm text-slate-700">λ = a ± bi</span>, it implies the transformation includes a <strong>rotation</strong>.
+            </p>
+          </div>
+
+          {/* Math Display Card */}
+          <div className="bg-slate-50 rounded-xl p-5 border border-slate-200 mb-6 flex flex-col gap-4">
+            <div className="flex justify-between items-center">
+              <div className="text-sm font-semibold text-slate-500 uppercase tracking-wider">Matrix Form</div>
+              <div className="font-mono text-lg text-slate-800 flex items-center gap-2">
+                <span className="text-2xl font-light">[</span>
+                <div className="flex flex-col items-center leading-tight">
+                  <span>{a.toFixed(2)} &nbsp; {(-b).toFixed(2)}</span>
+                  <span>{b.toFixed(2)} &nbsp; {a.toFixed(2)}</span>
+                </div>
+                <span className="text-2xl font-light">]</span>
+              </div>
+            </div>
+            
+            <div className="h-px w-full bg-slate-200"></div>
+            
+            <div className="flex justify-between items-center">
+              <div className="text-sm font-semibold text-slate-500 uppercase tracking-wider">Eigenvalues</div>
+              <div className="font-mono text-lg text-indigo-600 font-medium">
+                λ = {a.toFixed(2)} ± {Math.abs(b).toFixed(2)}i
+              </div>
+            </div>
+          </div>
+
+          {/* Controls */}
+          <div className="space-y-6 mb-8">
+            {/* Real Part Slider */}
+            <div>
+              <div className="flex justify-between mb-2">
+                <label className="text-sm font-medium text-slate-700">Real Part (a) - <span className="text-slate-500 font-normal">Scaling</span></label>
+                <span className="font-mono text-sm text-slate-600">{a.toFixed(2)}</span>
+              </div>
+              <input 
+                type="range" 
+                min="-1.5" 
+                max="1.5" 
+                step="0.01" 
+                value={a} 
+                onChange={(e) => setA(parseFloat(e.target.value))}
+                className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+              />
+            </div>
+
+            {/* Imaginary Part Slider */}
+            <div>
+              <div className="flex justify-between mb-2">
+                <label className="text-sm font-medium text-slate-700">Imaginary Part (b) - <span className="text-slate-500 font-normal">Rotation</span></label>
+                <span className="font-mono text-sm text-slate-600">{b.toFixed(2)}</span>
+              </div>
+              <input 
+                type="range" 
+                min="-1.5" 
+                max="1.5" 
+                step="0.01" 
+                value={b} 
+                onChange={(e) => setB(parseFloat(e.target.value))}
+                className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+              />
+            </div>
+          </div>
+
+          {/* Dynamic Explanation */}
+          <div className={`mt-auto rounded-xl p-5 border ${magnitude > 1 ? 'bg-rose-50 border-rose-200' : magnitude < 1 ? 'bg-emerald-50 border-emerald-200' : 'bg-blue-50 border-blue-200'}`}>
+            <div className="flex justify-between items-end mb-2">
+              <h3 className={`font-bold text-lg ${statusColor}`}>{behaviorTitle}</h3>
+              <div className="text-right">
+                <div className="text-xs text-slate-500 uppercase font-semibold">Magnitude (|λ|)</div>
+                <div className={`font-mono font-bold ${statusColor}`}>{magnitude.toFixed(3)}</div>
+              </div>
+            </div>
+            <p className="text-slate-700 text-sm">
+              {behaviorDesc} The rotation angle per step is roughly <strong>{Math.abs(angleDeg).toFixed(1)}°</strong>.
+            </p>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+---
+Return ONLY the complete src/App.tsx code with export default function App().

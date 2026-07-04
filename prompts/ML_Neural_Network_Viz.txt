@@ -1,0 +1,8 @@
+Project: Neural Net Forward/Backward Viewer (ChatGPT Edition)
+Role: Interactive ML educator.
+Objective: Single hidden-layer MLP toy with live forward + backprop visualization.
+Design: neon lines on dark; node activations glow.
+Panels: architecture editor (neurons, activation), dataset picker (spiral, xor, blobs), forward pass animation, gradient flow display, loss curve chart, ablation toggle to freeze a neuron.
+Technical: small tensors in plain JS; no heavy ML libs; use canvas/SVG.
+Output: only src/App.tsx; default export; runtime deps noted if needed.
+

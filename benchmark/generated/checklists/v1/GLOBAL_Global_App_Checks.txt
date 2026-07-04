@@ -1,0 +1,48 @@
+### GradientLab Benchmark Checklist (v1)
+module: GLOBAL
+title: Global App Checks
+items: 5
+total_weight: 5.50
+
+#### Items
+- id: GLB-G-001
+  weight: 1.0
+  description: 打开应用后，依次点击侧边栏 6 个模块入口，验证主标题随模块变化且无白屏/崩溃。
+  action: 按 runner 轨迹执行（或人工按描述操作）
+  expected: 满足 judge 规则：nav_cycle
+  evidence: screens_min=6 trace_min_steps=6
+  auto_judge_rule: {"type": "nav_cycle", "expected_titles": ["The Descent", "The Loss Landscape", "Steps & Learning Rate", "Local Minima", "Optimizers", "Blind Climber"]}
+- id: GLB-G-002
+  weight: 1.0
+  description: 在任意可视化页面执行一次拖拽平移（pan），验证画布内容发生明显位移。
+  action: 按 runner 轨迹执行（或人工按描述操作）
+  expected: 满足 judge 规则：visual_change_after_pan
+  evidence: screens_min=2 trace_min_steps=2
+  auto_judge_rule: {"type": "visual_change_after_pan", "min_diff_ratio": 0.02}
+- id: GLB-G-003
+  weight: 1.0
+  description: 在任意可视化页面执行一次滚轮缩放（zoom），验证画布网格/等高线尺度发生变化。
+  action: 按 runner 轨迹执行（或人工按描述操作）
+  expected: 满足 judge 规则：visual_change_after_zoom
+  evidence: screens_min=2 trace_min_steps=2
+  auto_judge_rule: {"type": "visual_change_after_zoom", "min_diff_ratio": 0.02}
+- id: GLB-G-004
+  weight: 1.0
+  description: 全站检查：不应出现 'Coming Soon' 文案。
+  action: 按 runner 轨迹执行（或人工按描述操作）
+  expected: 满足 judge 规则：page_text_absence
+  evidence: screens_min=1 trace_min_steps=1
+  auto_judge_rule: {"type": "page_text_absence", "forbidden": ["Coming Soon"]}
+- id: GLB-G-007
+  weight: 1.5
+  description: 全站检查：不应出现 'Under Construction' 文案（避免占位）。
+  action: 按 runner 轨迹执行（或人工按描述操作）
+  expected: 满足 judge 规则：page_text_absence
+  evidence: screens_min=1 trace_min_steps=1
+  auto_judge_rule: {"type": "page_text_absence", "forbidden": ["Under Construction", "Module Under Construction"]}
+
+#### Scoring
+- 每项：pass=weight，fail=0。
+- 模块得分 = sum(pass_weights) / sum(weights)。
+- 全局/总体 Success Rate 以任务通过率（pass/total）统计。
+- 如启用 LLM/VLM 评测：同一任务可重复评测 3 次，输出 mean±std（对齐 WebVoyager Table 1 风格）。

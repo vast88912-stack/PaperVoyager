@@ -1,0 +1,8 @@
+Project: Thermo Playground (ChatGPT Edition)
+Role: Physics UI engineer.
+Objective: Explore ideal gas laws and phase changes visually.
+Design: warm gradient background; cards for concepts.
+Modules: particle box with adjustable temperature/volume; PV/nT chart; isothermal vs adiabatic path animator; phase diagram with region hover tips; mixing hot/cold experiment with energy balance.
+Output: only src/App.tsx; default export; runtime deps listed if needed.
+
+

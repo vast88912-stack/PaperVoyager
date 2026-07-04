@@ -1,0 +1,14 @@
+Project: Balanced BST Studio (ChatGPT Edition)
+Role: Systems-aware UI engineer.
+Objective: Teach AVL vs Red-Black vs Treap rotations and invariants.
+Design: clean dark-on-light with math-friendly mono font for keys.
+Sections:
+- Hero: choose dataset seed and tree type.
+- Insert/Delete Simulator: step through operations; show rotations with animated arrows.
+- Invariant Panel: real-time heights, black-height, priorities.
+- Traversal Viewer: in-order/pre/post lists update live.
+- Challenge Mode: user must fix a broken tree by selecting correct rotation sequence.
+Technical: use SVG for nodes/edges; ensure layout handles up to 31 nodes.
+Output: only src/App.tsx, default export; note runtime deps if any.
+
+

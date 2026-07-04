@@ -1,0 +1,68 @@
+**Project:** Sorting Algorithm Grand Prix (Gold Standard)
+**Role:** Senior Creative Technologist.
+**Objective:** Build a high-complexity, single-file React+TS teaching dashboard that visualizes Sorting Algorithms not just as bars, but as a "Race" with audio-visual feedback.
+
+**Global UX Spec:**
+- Layout: Landing Page (Hero) -> Dashboard (Sidebar + Main + Inspector).
+- Theme: Scientific Dark Mode (Cyberpunk accents).
+- Navigation: Algorithm tabs + "Race Control".
+- Inspector: "Sort Engine State" (Comparisons, Swaps, Recursion Depth).
+
+**Module Plan (Landing + 5 Modules):**
+1. **Module 0: Hero / Order from Chaos**
+   - Visual: A massive particle cloud sorting itself by color spectrum in real-time.
+   - Text: "Entropy increases naturally. It takes energy and logic to create Order."
+
+2. **Module 1: Quadratic Struggles (Bubble, Insertion, Selection)**
+   - Concept: Simple but slow (O(n^2)).
+   - Visualization: "Bar Graph" where active bars light up.
+   - Audio: Map value to pitch. Hear the "bubbling" high notes rising.
+   - Interaction: Scrub through the history of swaps.
+
+3. **Module 2: Divide and Conquer (Merge Sort)**
+   - Concept: Recursive splitting.
+   - Visualization: A "Tree" view showing the array splitting into subarrays and merging back.
+   - Simulation: Step-by-step recursion visualization.
+
+4. **Module 3: The Speed Demon (Quick Sort)**
+   - Concept: Pivoting and partitioning.
+   - Visualization: Highlight the "Pivot" and the "Partition" zones.
+   - Interactive: User picks the Pivot strategy (First, Last, Random, Median of 3). Show how "Worst Case" happens.
+
+5. **Module 4: The Grand Race**
+   - Concept: O(n^2) vs O(n log n).
+   - Layout: 4 horizontal tracks. Bubble vs Merge vs Quick vs Heap.
+   - Simulation: Start them on 500 elements. Watch Quick Sort finish while Bubble is 10% done.
+   - Metrics: Live graph of "Operations Count".
+
+6. **Module 5: The "Anti-Sort" Challenge**
+   - Concept: Adversarial inputs.
+   - Task: "Construct an array that makes Quick Sort run in O(n^2)" or "Make Insertion Sort beat Quick Sort (Small N)".
+   - Scoring: Points for finding these edge cases.
+
+**Scoring & Gamification:**
+- **Sort Master Rank**: Level up by watching all algos and winning the challenge.
+- **Audio Mode**: Toggle to "Hear" the algorithms.
+
+**Implementation Notes:**
+- Use `lucide-react` for icons.
+- Use `framer-motion` for transitions.
+- **CRITICAL**: Use `Canvas` for the "Grand Race" to render thousands of items efficiently.
+- Use `Web Audio API` (OscillatorNode) for the sonification (optional but highly recommended for "Gold Standard").
+
+**Acceptance Checklist:**
+- [ ] Landing page with Color Spectrum sort.
+- [ ] >= 4 algorithms (Bubble, Merge, Quick, Heap).
+- [ ] "Grand Race" mode with live metrics.
+- [ ] Audio feedback (sonification).
+- [ ] Single file `src/App.tsx`.
+
+**Codegen Output Requirements:**
+- Return ONLY one file's code: `src/App.tsx`
+- Must include: `export default function App() { ... }`
+- No markdown fences in the final code output
+- If any optional runtime deps are used, list them explicitly at the end of the prompt under: `Runtime deps: ...`
+
+
+
+

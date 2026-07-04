@@ -1,0 +1,9 @@
+Project: K-Means & Friends Lab (ChatGPT Edition)
+Role: Data viz engineer.
+Objective: Compare K-Means, K-Medoids, MiniBatch, and GMM initialization effects.
+Design: light theme, candy colors for clusters.
+Features: point cloud canvas with presets (blobs, moons, concentric); k slider; init choices (random, k-means++, farthest); live inertia chart; silhouette score badge; animation of centroid drift.
+Advanced: toggle mini-batch size; show GMM responsibilities heatmap.
+Output: only src/App.tsx; default export; runtime deps listed if used.
+
+

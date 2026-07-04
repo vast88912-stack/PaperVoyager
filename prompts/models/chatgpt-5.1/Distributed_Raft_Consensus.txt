@@ -1,0 +1,15 @@
+Project: Raft Consensus Animator (ChatGPT Edition)
+Role: Distributed systems educator.
+Objective: Visualize leader election, log replication, and safety under partitions.
+Design: dark terminal aesthetic with colored nodes and timelines.
+Views:
+- Cluster Overview: 5-node default; adjustable latency/packet loss sliders.
+- Election Simulator: animate terms, votes, timeouts.
+- Log Replication: show AppendEntries flow and commit index per node.
+- Partition Sandbox: drag to cut links; show how Raft recovers.
+- Safety Checklist: cards explaining invariants (leader completeness, log matching).
+Interactions: play/pause/step; random seed display; reset cluster.
+Technical: simulate with lightweight JS (no external sim libs); cap nodes to 7.
+Output: only src/App.tsx, default export; optional deps noted.
+
+

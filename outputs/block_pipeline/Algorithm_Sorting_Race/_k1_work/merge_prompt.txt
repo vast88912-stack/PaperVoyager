@@ -1,0 +1,1248 @@
+You are merging multiple React component blocks into one monolithic App.tsx.
+Return ONLY valid TSX code — no markdown fences, no explanations.
+The merged file must:
+- Have one unified imports section at the top
+- Have one root App() default export function
+- Deduplicate all state and helper functions
+- Render all blocks in a sidebar-navigated layout (similar to the original prompt's design)
+- Use Tailwind CSS for styling
+- Be fully self-contained in a single file
+
+
+---
+ORIGINAL APP SPECIFICATION:
+Project: Sorting Race 2.0 (ChatGPT Edition)
+Role: Frontend engineer + pedagogy.
+Objective: Compare sorting algorithms (bubble, insertion, merge, quick, heap, radix) on arrays and nearly-sorted data.
+Design: Split view with race track lanes; light theme with high contrast colors.
+Features:
+- Dataset presets: random, nearly sorted, reversed, few uniques.
+- Controls: array size slider, speed slider, shuffle button.
+- Visuals: bar chart per lane with live swaps/highlights; show operation counts.
+- Stability toggle and explanation card.
+- Post-run summary table with time steps and swap counts.
+Technical: keep algorithms in pure functions; allow async stepping via requestAnimationFrame.
+Output: only src/App.tsx, default export; optional deps declared at end.
+
+
+
+---
+You have 5 block implementations to merge.
+Each block is a standalone React component that implements one module.
+Your task: combine them into a single polished App.tsx.
+
+Design requirements:
+- Left sidebar with navigation tabs for each module
+- Main content area that shows the active module
+- Unified dark theme (slate-950 background, slate-100 text)
+- Keep all interactive features from each block intact
+- Merge duplicate imports and state declarations
+
+=== BLOCK 1: Hero Introduction ===
+Description: Landing hero for: Project: Sorting Race 2.0 (ChatGPT Edition)
+
+import React, { useState, useEffect } from 'react';
+import { Play, Info, BarChart3, Settings2, BookOpen, Zap, Activity } from 'lucide-react';
+
+// --- Custom Hook for Hero Animation ---
+// Simulates sorting algorithms for the visual race track in the hero section.
+function useSimulatedSort(speed: number, type: 'fast' | 'slow') {
+  const [arr, setArr] = useState<number[]>([]);
+  const [active, setActive] = useState<number[]>([]);
+  const [isComplete, setIsComplete] = useState(false);
+
+  useEffect(() => {
+    let timeoutId: ReturnType<typeof setTimeout>;
+    
+    const reset = () => {
+      // Generate random array of 30 elements
+      setArr(Array.from({ length: 30 }, () => Math.floor(Math.random() * 85) + 15));
+      setIsComplete(false);
+      setActive([]);
+    };
+    
+    reset();
+
+    const interval = setInterval(() => {
+      setArr(prev => {
+        if (prev.length === 0) return prev;
+        
+        let next = [...prev];
+        let isSorted = true;
+        
+        // Check if sorted
+        for(let i = 0; i < next.length - 1; i++) {
+          if(next[i] > next[i+1]) {
+            isSorted = false;
+            break;
+          }
+        }
+        
+        if(isSorted) {
+          setIsComplete(true);
+          setActive([]);
+          clearInterval(interval);
+          // Auto-restart the race after 3 seconds
+          timeoutId = setTimeout(reset, 3000);
+          return next;
+        }
+
+        let newActive: number[] = [];
+        
+        if (type === 'fast') {
+          // Simulate O(n log n) by doing multiple valid swaps per tick
+          let swaps = 0;
+          let attempts = 0;
+          while(swaps < 4 && attempts < 20) {
+             let idx = Math.floor(Math.random() * (next.length - 1));
+             if (next[idx] > next[idx+1]) {
+               let temp = next[idx];
+               next[idx] = next[idx+1];
+               next[idx+1] = temp;
+               newActive.push(idx, idx+1);
+               swaps++;
+             }
+             attempts++;
+          }
+        } else {
+           // Simulate O(n^2) Bubble Sort (one swap per tick)
+           for(let i = 0; i < next.length - 1;
+
+
+=== BLOCK 2: Core Visualization ===
+Description: Main interactive visualization for: Project: Sorting Race 2.0 (ChatGPT Edition)
+
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+
+// --- Types & Interfaces ---
+type Item = {
+  val: number;
+  id: number;
+};
+
+type Action =
+  | { type: 'COMPARE'; idx: [number, number] }
+  | { type: 'SWAP'; idx: [number, number] }
+  | { type: 'SET'; idx: number; item: Item }
+  | { type: 'FINISH' };
+
+type Algorithm = {
+  name: string;
+  run: (arr: Item[]) => Action[];
+};
+
+type Stats = {
+  ops: number;
+  writes: number;
+  finished: boolean;
+  isStable: boolean;
+};
+
+// --- Sorting Algorithms (Pure Functions returning Traces) ---
+const bubbleSortRun = (initialArr: Item[]): Action[] => {
+  const actions: Action[] = [];
+  const arr = [...initialArr];
+  const n = arr.length;
+  for (let i = 0; i < n; i++) {
+    let swapped = false;
+    for (let j = 0; j < n - i - 1; j++) {
+      actions.push({ type: 'COMPARE', idx: [j, j + 1] });
+      if (arr[j].val > arr[j + 1].val) {
+        actions.push({ type: 'SWAP',
+
+
+=== BLOCK 3: Controls & Parameters ===
+Description: User controls and parameter sliders for: Project: Sorting Race 2.0 (ChatGPT Edition)
+
+import React, { useState } from 'react';
+
+export default function App() {
+  const [dataset, setDataset] = useState<'random' | 'nearly-sorted' | 'reversed' | 'few-uniques'>('random');
+  const [arraySize, setArraySize] = useState<number>(50);
+  const [speed, setSpeed] = useState<number>(50);
+  const [isStable, setIsStable] = useState<boolean>(true);
+  const [selectedAlgos, setSelectedAlgos] = useState<string[]>(['bubble', 'merge', 'quick']);
+
+  const datasetOptions = [
+    { id: 'random', label: 'Random', icon: '🔀', desc: 'Completely randomized array. Good for testing average-case performance.' },
+    { id: 'nearly-sorted', label: 'Nearly Sorted', icon: '📶', desc: '90% of elements are in order. Highly efficient for adaptive algorithms like Insertion Sort.' },
+    { id: 'reversed', label: 'Reversed', icon: '🔽', desc: 'Elements in descending order. Often triggers the worst-case time complexity.' },
+    { id: 'few-uniques', label: 'Few Uniques', icon: '🧱', desc: 'Contains many duplicate values. Tests how algorithms handle redundancy and stability.' },
+  ];
+
+  const algorithms = [
+    { id: 'bubble', label: 'Bubble Sort' },
+    { id: 'insertion', label: 'Insertion Sort' },
+    { id: 'merge', label: 'Merge Sort' },
+    { id: 'quick', label: 'Quick Sort' },
+    { id: 'heap', label: 'Heap Sort' },
+    { id: 'radix', label: 'Radix Sort' },
+  ];
+
+  const handleAlgoToggle = (id: string) => {
+    setSelectedAlgos(prev => 
+      prev.includes(id) ? prev.filter(a => a !== id) : [...prev, id]
+    );
+  };
+
+  const activeDatasetDesc = datasetOptions.find(d => d.id === dataset)?.desc;
+
+  return (
+    <div className="min-h-screen bg-slate-50 text-slate-900 p-6 md:p-12 font-sans selection:bg-blue-200">
+      <div className="max-w-5xl mx-auto space-y-8">
+        
+        {/* Header */}
+        <header className="flex items-center justify-between pb-6 border-b-2 border-slate-200">
+          <div>
+            <h1 className="text-4xl font-extrabold tracking-tight text-slate-900 flex items-center gap-3">
+              <svg className="w-10 h-10 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+              Sorting Race 2.0
+            </h1>
+            <p className="text-slate-500 mt-2 font-medium">Configure parameters before starting the algorithm race.</p>
+          </div>
+          <div className="hidden md:flex items-center gap-2 bg-white px-4 py-2 rounded-full shadow-sm border border-slate-200">
+            <span className="flex h-3 w-3 relative">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+            </span>
+            <span className="text-sm font-bold text-slate-700">System Ready</span>
+          </div>
+        </header>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          
+          {/* Main Controls Column */}
+          <div className="lg:col-span-2 space-y-8">
+            
+            {/* Dataset Selection */}
+            <section className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+              <h2 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" /></svg>
+                Dataset Preset
+              </h2>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {datasetOptions.map((opt) => (
+                  <button
+                    key={opt.id}
+                    onClick={() => setDataset(opt.id as any)}
+                    className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all duration-200 ${
+                      dataset === opt.id 
+                        ? 'border-blue-600 bg-blue-50 text-blue-800 shadow-md scale-[1.02]' 
+                        : 'border-slate-100 bg-slate-50 text-slate-600 hover:border-blue-300 hover:bg-blue-50/50'
+                    }`}
+                  >
+                    <span className="text-2xl mb-2">{opt.icon}</span>
+                    <span className="text-sm font-bold text-center leading-tight">{opt.label}</span>
+                  </button>
+                ))}
+              </div>
+            </section>
+
+            {/* Sliders & Toggles */}
+            <section className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-8">
+              
+              {/* Array Size Slider */}
+              <div>
+                <div className="flex justify-between items-end mb-2">
+                  <label className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                    <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" /></svg>
+                    Array Size
+                  </label>
+                  <span className="text-2xl font-black text-blue-600 bg-blue-50 px-3 py-1 rounded-lg">{arraySize}</span>
+                </div>
+                <input 
+                  type="range" 
+                  min="10" 
+                  max="500" 
+                  value={arraySize} 
+                  onChange={(e) => setArraySize(Number(e.target.value))}
+                  className="w-full h-3 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600 hover:accent-blue-700 transition-all"
+                />
+                <div className="flex justify-between text-xs font-bold text-slate-400 mt-2 uppercase tracking-wider">
+                  <span>10 (Fast)</span>
+                  <span>500 (Heavy)</span>
+                </div>
+              </div>
+
+              {/* Speed Slider */}
+              <div>
+                <div className="flex justify-between items-end mb-2">
+                  <label className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                    <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    Animation Speed
+                  </label>
+                  <span className="text-2xl font-black text-blue-600 bg-blue-50 px-3 py-1 rounded-lg">{speed}%</span>
+                </div>
+                <input 
+                  type="range" 
+                  min="1" 
+                  max="100" 
+                  value={speed} 
+                  onChange={(e) => setSpeed(Number(e.target.value))}
+                  className="w-full h-3 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600 hover:accent-blue-700 transition-all"
+                />
+                <div className="flex justify-between text-xs font-bold text-slate-400 mt-2 uppercase tracking-wider">
+                  <span>Slow Step</span>
+                  <span>Light Speed</span>
+                </div>
+              </div>
+
+            </section>
+
+            {/* Competitors Selection */}
+            <section className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+               <h2 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+                Select Competitors
+              </h2>
+              <div className="flex flex-wrap gap-3">
+                {algorithms.map(algo => {
+                  const isSelected = selectedAlgos.includes(algo.id);
+                  return (
+                    <button
+                      key={algo.id}
+                      onClick={() => handleAlgoToggle(algo.id)}
+                      className={`px-4 py-2 rounded-full text-sm font-bold border-2 transition-colors ${
+                        isSelected 
+                          ? 'border-slate-800 bg-slate-800 text-white shadow-md' 
+                          : 'border-slate-200 bg-white text-slate-500 hover:border-slate-400'
+                      }`}
+                    >
+                      {algo.label}
+                    </button>
+                  )
+                })}
+              </div>
+            </section>
+
+          </div>
+
+          {/* Side Panel: Explanations & Actions */}
+          <div className="space-y-6">
+            
+            {/* Action Buttons */}
+            <div className="bg-slate-800 p-6 rounded-2xl shadow-xl text-white flex flex-col gap-4">
+              <button className="w-full py-4 bg-blue-600 hover:bg-blue-500 text-white font-black text-xl rounded-xl shadow-lg shadow-blue-900/50 transition-all transform hover:-translate-y-1 flex items-center justify-center gap-2">
+                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" /></svg>
+                START RACE
+              </button>
+              <button className="w-full py-3 bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold text-md rounded-xl transition-colors flex items-center justify-center gap-2">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                Shuffle Data
+              </button>
+            </div>
+
+            {/* Stability Toggle & Info */}
+            <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-bold text-slate-800">Enforce Stability</h3>
+                <button 
+                  onClick={() => setIsStable(!isStable)}
+                  className={`relative inline-flex h-7 w-14 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${isStable ? 'bg-blue-600' : 'bg-slate-300'}`}
+                >
+                  <span className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${isStable ? 'translate-x-8' : 'translate-x-1'}`} />
+                </button>
+              </div>
+              <div className="bg-amber-50 border-l-4 border-amber-400 p-4 rounded-r-lg">
+                <p className="text-sm text-amber-900 font-medium">
+                  {isStable 
+                    ? "Stable sorting maintains the relative order of records with equal keys. (e.g., Merge Sort, Insertion Sort)" 
+                    : "Unstable sorting may change the relative order of records with equal keys. (e.g., Quick Sort, Heap Sort)"}
+                </p>
+              </div>
+            </div>
+
+            {/* Explanation Card */}
+            <div className="bg-blue-50 p-6 rounded-2xl border border-blue-100">
+              <h3 className="text-sm font-black text-blue-800 uppercase tracking-wider mb-2 flex items-center gap-2">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                Current Configuration
+              </h3>
+              <p className="text-slate-700 text-sm leading-relaxed mb-4">
+                {activeDatasetDesc}
+              </p>
+              <ul className="space-y-2 text-sm font-medium text-slate-600">
+                <li className="flex justify-between border-b border-blue-200/50 pb-1">
+                  <span>Elements:</span>
+                  <span className="text-blue-800 font-bold">{arraySize}</span>
+                </li>
+                <li className="flex justify-between border-b border-blue-200/50 pb-1">
+                  <span>Speed Multiplier:</span>
+                  <span className="text-blue-800 font-bold">{speed}x</span>
+                </li>
+                <li className="flex justify-between pb-1">
+                  <span>Competitors:</span>
+                  <span className="text-blue-800 font-bold">{selectedAlgos.length}</span>
+                </li>
+              </ul>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+=== BLOCK 4: Analysis & Output ===
+Description: Analysis panel and output display for: Project: Sorting Race 2.0 (ChatGPT Edition)
+
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+
+// --- Types & Interfaces ---
+
+type DatasetType = 'random' | 'nearly_sorted' | 'reversed' | 'few_uniques';
+
+interface Config {
+  size: number;
+  speed: number;
+  dataset: DatasetType;
+  checkStability: boolean;
+}
+
+interface Action {
+  type: 'comp' | 'swap' | 'write';
+  i: number;
+  j?: number;
+  val?: number;
+}
+
+interface AlgoStats {
+  comps: number;
+  swaps: number;
+  writes: number;
+}
+
+interface LaneState {
+  id: string;
+  name: string;
+  isStable: boolean;
+  expectedTime: string;
+  array: number[];
+  originalArray: number[];
+  activeIndices: number[];
+  stats: AlgoStats;
+  status: 'idle' | 'running' | 'finished';
+  finishRank: number | null;
+  frames: Action[];
+  frameIdx: number;
+}
+
+// --- Algorithm Implementations (Pure Functions returning Actions) ---
+
+class Recorder {
+  frames: Action[] = [];
+  stats: AlgoStats = { comps: 0, swaps: 0, writes: 0 };
+
+  comp(i: number, j: number) {
+    this.stats.comps++;
+    this.frames.push({ type: 'comp', i, j });
+  }
+  swap(arr: number[], i: number, j: number) {
+    this.stats.swaps++;
+    this.frames.push({ type: 'swap', i, j });
+    const temp = arr[i];
+    arr[i] = arr[j];
+    arr[j] = temp;
+  }
+  write(arr: number[], i: number, val: number) {
+    this.stats.writes++;
+    this.frames.push({ type: 'write', i, val });
+    arr[i] = val;
+  }
+}
+
+const algorithms = {
+  bubble: (input: number[]): Action[] => {
+    const arr = [...input];
+    const rec = new Recorder();
+    const n = arr.length;
+    for (let i = 0; i < n; i++) {
+      let swapped = false;
+      for (let j = 0; j < n - i - 1; j++) {
+        rec.comp(j, j + 1);
+        if (arr[j] > arr[j + 1]) {
+          rec.swap(arr, j, j + 1);
+          swapped = true;
+        }
+      }
+      if (!swapped) break;
+    }
+    return rec.frames;
+  },
+
+  insertion: (input: number[]): Action[] => {
+    const arr = [...input];
+    const rec = new Recorder();
+    const n = arr.length;
+    for (let i = 1; i < n; i++) {
+      let key = arr[i];
+      let j = i - 1;
+      while (j >= 0) {
+        rec.comp(j, i); // Approximate comparison for visualization
+        if (arr[j] > key) {
+          rec.write(arr, j + 1, arr[j]);
+          j = j - 1;
+        } else {
+          break;
+        }
+      }
+      rec.write(arr, j + 1, key);
+    }
+    return rec.frames;
+  },
+
+  merge: (input: number[]): Action[] => {
+    const arr = [...input];
+    const rec = new Recorder();
+
+    const mergeSort = (l: number, r: number) => {
+      if (l >= r) return;
+      const m = l + Math.floor((r - l) / 2);
+      mergeSort(l, m);
+      mergeSort(m + 1, r);
+      merge(l, m, r);
+    };
+
+    const merge = (l: number, m: number, r: number) => {
+      const left = arr.slice(l, m + 1);
+      const right = arr.slice(m + 1, r + 1);
+      let i = 0, j = 0, k = l;
+
+      while (i < left.length && j < right.length) {
+        rec.comp(l + i, m + 1 + j);
+        if (left[i] <= right[j]) {
+          rec.write(arr, k, left[i]);
+          i++;
+        } else {
+          rec.write(arr, k, right[j]);
+          j++;
+        }
+        k++;
+      }
+      while (i < left.length) {
+        rec.write(arr, k, left[i]);
+        i++;
+        k++;
+      }
+      while (j < right.length) {
+        rec.write(arr, k, right[j]);
+        j++;
+        k++;
+      }
+    };
+
+    mergeSort(0, arr.length - 1);
+    return rec.frames;
+  },
+
+  quick: (input: number[]): Action[] => {
+    const arr = [...input];
+    const rec = new Recorder();
+
+    const quickSort = (low: number, high: number) => {
+      if (low < high) {
+        const pi = partition(low, high);
+        quickSort(low, pi - 1);
+        quickSort(pi + 1, high);
+      }
+    };
+
+    const partition = (low: number, high: number): number => {
+      const pivot = arr[high];
+      let i = low - 1;
+      for (let j = low; j < high; j++) {
+        rec.comp(j, high);
+        if (arr[j] < pivot) {
+          i++;
+          rec.swap(arr, i, j);
+        }
+      }
+      rec.swap(arr, i + 1, high);
+      return i + 1;
+    };
+
+    quickSort(0, arr.length - 1);
+    return rec.frames;
+  },
+
+  heap: (input: number[]): Action[] => {
+    const arr = [...input];
+    const rec = new Recorder();
+    const n = arr.length;
+
+    const heapify = (n: number, i: number) => {
+      let largest = i;
+      const l = 2 * i + 1;
+      const r = 2 * i + 2;
+
+      if (l < n) {
+        rec.comp(l, largest);
+        if (arr[l] > arr[largest]) largest = l;
+      }
+      if (r < n) {
+        rec.comp(r, largest);
+        if (arr[r] > arr[largest]) largest = r;
+      }
+      if (largest !== i) {
+        rec.swap(arr, i, largest);
+        heapify(n, largest);
+      }
+    };
+
+    for (let i = Math.floor(n / 2) - 1; i >= 0; i--) {
+      heapify(n, i);
+    }
+    for (let i = n - 1; i > 0; i--) {
+      rec.swap(arr, 0, i);
+      heapify(i, 0);
+    }
+    return rec.frames;
+  },
+
+  radix: (input: number[]): Action[] => {
+    const arr = [...input];
+    const rec = new Recorder();
+    const max = Math.max(...arr);
+
+    const countSort = (exp: number) => {
+      const output = new Array(arr.length).fill(0);
+      const count = new Array(10).fill(0);
+
+      for (let i = 0; i < arr.length; i++) {
+        count[Math.floor(arr[i] / exp) % 10]++;
+      }
+      for (let i = 1; i < 10; i++) {
+        count[i] += count[i - 1];
+      }
+      for (let i = arr.length - 1; i >= 0; i--) {
+        const idx = Math.floor(arr[i] / exp) % 10;
+        output[count[idx] - 1] = arr[i];
+        count[idx]--;
+      }
+      for (let i = 0; i < arr.length; i++) {
+        rec.write(arr, i, output[i]);
+      }
+    };
+
+    for (let exp = 1; Math.floor(max / exp) > 0; exp *= 10) {
+      countSort(exp);
+    }
+    return rec.frames;
+  }
+};
+
+// --- Helper Functions ---
+
+const generateData = (size: number, type: DatasetType): number[] => {
+  let arr: number[] = [];
+  if (type === 'random') {
+    arr = Array.from({ length: size }, () => Math.floor(Math.random() * 90) + 10);
+  } else if (type === 'nearly_sorted') {
+    arr = Array.from({ length: size }, (_, i) => Math.floor((i / size) * 90) + 10);
+    for (let i = 0; i < size / 10; i++) {
+      const idx1 = Math.floor(Math.random() * size);
+      const idx2 = Math.floor(Math.random() * size);
+      [arr[idx1], arr[idx2]] = [arr[idx2], arr[idx1]];
+    }
+  } else if (type === 'reversed') {
+    arr = Array.from({ length: size }, (_, i) => Math.floor(((size - i) / size) * 90) + 10);
+  } else if (type === 'few_uniques') {
+    const uniques = [20, 40, 60, 80];
+    arr = Array.from({ length: size }, () => uniques[Math.floor(Math.random() * uniques.length)]);
+  }
+  return arr;
+};
+
+const ALGO_DEFS = [
+  { id: 'bubble', name: 'Bubble Sort', isStable: true, expectedTime: 'O(n²)' },
+  { id: 'insertion', name: 'Insertion Sort', isStable: true, expectedTime: 'O(n²)' },
+  { id: 'merge', name: 'Merge Sort', isStable: true, expectedTime: 'O(n log n)' },
+  { id: 'quick', name: 'Quick Sort', isStable: false, expectedTime: 'O(n log n)' },
+  { id: 'heap', name: 'Heap Sort', isStable: false, expectedTime: 'O(n log n)' },
+  { id: 'radix', name: 'Radix Sort', isStable: true, expectedTime: 'O(nk)' },
+];
+
+// --- Main Component ---
+
+export default function App() {
+  const [config, setConfig] = useState<Config>({
+    size: 40,
+    speed: 5,
+    dataset: 'random',
+    checkStability: false,
+  });
+
+  const [lanes, setLanes] = useState<LaneState[]>([]);
+  const [isRunning, setIsRunning] = useState(false);
+  const [isFinished, setIsFinished] = useState(false);
+  const [baseArray, setBaseArray] = useState<number[]>([]);
+
+  const requestRef = useRef<number>();
+  const lanesRef = useRef<LaneState[]>([]);
+  const rankCounterRef = useRef<number>(1);
+
+  // Initialize Data
+  const initRace = useCallback(() => {
+    const newBase = generateData(config.size, config.dataset);
+    setBaseArray(newBase);
+    
+    const initialLanes: LaneState[] = ALGO_DEFS.map(def => ({
+      ...def,
+      array: [...newBase],
+      originalArray: [...newBase],
+      activeIndices: [],
+      stats: { comps: 0, swaps: 0, writes: 0 },
+      status: 'idle',
+      finishRank: null,
+      frames: [],
+      frameIdx: 0,
+    }));
+    
+    setLanes(initialLanes);
+    lanesRef.current = initialLanes;
+    setIsFinished(false);
+    setIsRunning(false);
+    rankCounterRef.current = 1;
+  }, [config.size, config.dataset]);
+
+  useEffect(() => {
+    initRace();
+  }, [initRace]);
+
+  // Start Race
+  const startRace = () => {
+    if (isRunning) return;
+    
+    // Pre-compute frames for all algorithms
+    const preparedLanes = lanes.map(lane => {
+      const frames = algorithms[lane.id as keyof typeof algorithms]([...lane.originalArray]);
+      return { ...lane, frames, status: 'running' as const, frameIdx: 0, stats: { comps: 0, swaps: 0, writes: 0 } };
+    });
+    
+    setLanes(preparedLanes);
+    lanesRef.current = preparedLanes;
+    setIsRunning(true);
+    setIsFinished(false);
+    rankCounterRef.current = 1;
+    
+    requestRef.current = requestAnimationFrame(playbackLoop);
+  };
+
+  // Playback Engine
+  const playbackLoop = () => {
+    let allFinished = true;
+    let updated = false;
+
+    const currentLanes = [...lanesRef.current];
+
+    for (let i = 0; i < currentLanes.length; i++) {
+      const lane = { ...currentLanes[i] };
+      
+      if (lane.status === 'running') {
+        allFinished = false;
+        updated = true;
+        
+        // Process multiple frames per tick based on speed
+        const steps = Math.max(1, Math.floor(config.speed));
+        let newArr = [...lane.array];
+        let newStats = { ...lane.stats };
+        let active: number[] = [];
+
+        for (let s = 0; s < steps; s++) {
+          if (lane.frameIdx >= lane.frames.length) {
+            lane.status = 'finished';
+            lane.finishRank = rankCounterRef.current++;
+            active = [];
+            break;
+          }
+
+          const frame = lane.frames[lane.frameIdx];
+          if (frame.type === 'comp') {
+            newStats.comps++;
+            active = [frame.i, frame.j!];
+          } else if (frame.type === 'swap') {
+            newStats.swaps++;
+            const temp = newArr[frame.i];
+            newArr[frame.i] = newArr[frame.j!];
+            newArr[frame.j!] = temp;
+            active = [frame.i, frame.j!];
+          } else if (frame.type === 'write') {
+            newStats.writes++;
+            newArr[frame.i] = frame.val!;
+            active = [frame.i];
+          }
+          lane.frameIdx++;
+        }
+
+        lane.array = newArr;
+        lane.stats = newStats;
+        lane.activeIndices = active;
+        currentLanes[i] = lane;
+      }
+    }
+
+    if (updated) {
+      lanesRef.current = currentLanes;
+      setLanes(currentLanes);
+    }
+
+    if (!allFinished) {
+      requestRef.current = requestAnimationFrame(playbackLoop);
+    } else {
+      setIsRunning(false);
+      setIsFinished(true);
+      // Clear active indices
+      setLanes(prev => prev.map(l => ({ ...l, activeIndices: [] })));
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      if (requestRef.current) cancelAnimationFrame(requestRef.current);
+    };
+  }, []);
+
+  // --- UI Components ---
+
+  return (
+    <div className="min-h-screen bg-slate-50 text-slate-800 font-sans flex flex-col">
+      {/* Header & Controls */}
+      <header className="bg-white border-b border-slate-200 shadow-sm p-4 z-10">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+          <div>
+            <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">Sorting Race 2.0</h1>
+            <p className="text-sm text-slate-500 font-medium">Analysis & Output Module</p>
+          </div>
+          
+          <div className="flex flex-wrap items-center gap-4 bg-slate-100 p-2 rounded-xl border border-slate-200">
+            <div className="flex flex-col px-2">
+              <label className="text-xs font-bold text-slate-500 uppercase">Dataset</label>
+              <select 
+                disabled={isRunning}
+                value={config.dataset}
+                onChange={(e) => setConfig({...config, dataset: e.target.value as DatasetType})}
+                className="bg-transparent text-sm font-semibold outline-none cursor-pointer"
+              >
+                <option value="random">Random</option>
+                <option value="nearly_sorted">Nearly Sorted</option>
+                <option value="reversed">Reversed</option>
+                <option value="few_uniques">Few Uniques</option>
+              </select>
+            </div>
+
+            <div className="w-px h-8 bg-slate-300"></div>
+
+            <div className="flex flex-col px-2 w-32">
+              <label className="text-xs font-bold text-slate-500 uppercase flex justify-between">
+                <span>Size</span> <span>{config.size}</span>
+              </label>
+              <input 
+                type="range" min="10" max="100" step="10"
+                disabled={isRunning}
+                value={config.size}
+                onChange={(e) => setConfig({...config, size: parseInt(e.target.value)})}
+                className="accent-indigo-600 cursor-pointer"
+              />
+            </div>
+
+            <div className="w-px h-8 bg-slate-300"></div>
+
+            <div className="flex flex-col px-2 w-32">
+              <label className="text-xs font-bold text-slate-500 uppercase flex justify-between">
+                <span>Speed</span> <span>{config.speed}x</span>
+              </label>
+              <input 
+                type="range" min="1" max="20" step="1"
+                value={config.speed}
+                onChange={(e) => setConfig({...config, speed: parseInt(e.target.value)})}
+                className="accent-indigo-600 cursor-pointer"
+              />
+            </div>
+
+            <div className="w-px h-8 bg-slate-300"></div>
+
+            <button 
+              onClick={initRace} disabled={isRunning}
+              className="px-4 py-2 text-sm font-bold text-slate-600 hover:text-slate-900 hover:bg-slate-200 rounded-lg transition-colors disabled:opacity-50"
+            >
+              Shuffle
+            </button>
+            <button 
+              onClick={startRace} disabled={isRunning || isFinished}
+              className="px-6 py-2 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isRunning ? 'Racing...' : 'Start Race'}
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Content Split */}
+      <main className="flex-1 max-w-7xl mx-auto w-full p-4 grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        {/* Left: Race Tracks (2 Columns) */}
+        <div className="lg:col-span-2 flex flex-col gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {lan
+
+
+=== BLOCK 5: Theory & Reference ===
+Description: Theory explanation and reference material for: Project: Sorting Race 2.0 (ChatGPT Edition)
+
+import React, { useState } from 'react';
+
+// --- Data Models ---
+
+type Complexity = 'O(1)' | 'O(log n)' | 'O(n)' | 'O(n log n)' | 'O(n²)' | 'O(n + k)' | 'O(nk)';
+
+interface AlgorithmInfo {
+  id: string;
+  name: string;
+  type: 'Comparative' | 'Non-Comparative';
+  description: string;
+  timeComplexity: {
+    best: Complexity;
+    average: Complexity;
+    worst: Complexity;
+  };
+  spaceComplexity: Complexity;
+  stable: boolean;
+  inPlace: boolean;
+  idealFor: string;
+  pitfalls: string;
+}
+
+const ALGORITHMS: AlgorithmInfo[] = [
+  {
+    id: 'bubble',
+    name: 'Bubble Sort',
+    type: 'Comparative',
+    description: 'Repeatedly steps through the list, compares adjacent elements, and swaps them if they are in the wrong order. The pass through the list is repeated until the list is sorted.',
+    timeComplexity: { best: 'O(n)', average: 'O(n²)', worst: 'O(n²)' },
+    spaceComplexity: 'O(1)',
+    stable: true,
+    inPlace: true,
+    idealFor: 'Educational demonstrations and detecting if a small array is already sorted.',
+    pitfalls: 'Extremely inefficient for large datasets. The "turtle" elements (small elements at the end) move very slowly to their correct positions.'
+  },
+  {
+    id: 'insertion',
+    name: 'Insertion Sort',
+    type: 'Comparative',
+    description: 'Builds the final sorted array one item at a time. It iterates through the input, growing a sorted list behind it by comparing the current element to the sorted ones and inserting it in the correct position.',
+    timeComplexity: { best: 'O(n)', average: 'O(n²)', worst: 'O(n²)' },
+    spaceComplexity: 'O(1)',
+    stable: true,
+    inPlace: true,
+    idealFor: 'Small datasets, nearly-sorted data, or as a hybrid fallback (e.g., in Timsort).',
+    pitfalls: 'Performance degrades quadratically as the dataset size increases or if the data is in reverse order.'
+  },
+  {
+    id: 'merge',
+    name: 'Merge Sort',
+    type: 'Comparative',
+    description: 'A divide-and-conquer algorithm that recursively splits the array into halves until each sub-array contains a single element, then merges those sub-arrays to produce new sorted sub-arrays until one remains.',
+    timeComplexity: { best: 'O(n log n)', average: 'O(n log n)', worst: 'O(n log n)' },
+    spaceComplexity: 'O(n)',
+    stable: true,
+    inPlace: false,
+    idealFor: 'Large datasets where stability is required, or sorting linked lists.',
+    pitfalls: 'Requires O(n) auxiliary space, making it less ideal for memory-constrained environments compared to Quick or Heap sort.'
+  },
+  {
+    id: 'quick',
+    name: 'Quick Sort',
+    type: 'Comparative',
+    description: 'Picks an element as a "pivot" and partitions the given array around the picked pivot, placing smaller elements before it and larger elements after it. It then recursively sorts the sub-arrays.',
+    timeComplexity: { best: 'O(n log n)', average: 'O(n log n)', worst: 'O(n²)' },
+    spaceComplexity: 'O(log n)',
+    stable: false,
+    inPlace: true,
+    idealFor: 'General-purpose sorting in memory. Often the fastest in practice due to excellent cache locality.',
+    pitfalls: 'Can degrade to O(n²) if a poor pivot is chosen (e.g., already sorted array with naive pivot). Unstable by default.'
+  },
+  {
+    id: 'heap',
+    name: 'Heap Sort',
+    type: 'Comparative',
+    description: 'Converts the array into a max-heap data structure, then repeatedly extracts the maximum element and rebuilds the heap until the array is sorted.',
+    timeComplexity: { best: 'O(n log n)', average: 'O(n log n)', worst: 'O(n log n)' },
+    spaceComplexity: 'O(1)',
+    stable: false,
+    inPlace: true,
+    idealFor: 'Systems with strict memory limits or real-time systems requiring guaranteed O(n log n) worst-case performance.',
+    pitfalls: 'Poor cache locality compared to Quick Sort, making it generally slower in real-world benchmarks despite the same Big-O.'
+  },
+  {
+    id: 'radix',
+    name: 'Radix Sort',
+    type: 'Non-Comparative',
+    description: 'Sorts data with integer keys by grouping keys by the individual digits which share the same significant position and value. It processes digits from least significant to most significant (LSD).',
+    timeComplexity: { best: 'O(nk)', average: 'O(nk)', worst: 'O(nk)' },
+    spaceComplexity: 'O(n + k)',
+    stable: true,
+    inPlace: false,
+    idealFor: 'Large arrays of integers, strings, or fixed-length keys where k (number of digits) is small.',
+    pitfalls: 'Not a general-purpose sort (requires specific data types). High memory overhead for the buckets.'
+  }
+];
+
+// --- Helper Components ---
+
+const ComplexityBadge = ({ value, type }: { value: Complexity; type: 'time' | 'space' }) => {
+  let colorClass = 'bg-slate-100 text-slate-800 border-slate-300';
+  
+  if (type === 'time') {
+    if (value === 'O(1)' || value === 'O(log n)') colorClass = 'bg-emerald-100 text-emerald-900 border-emerald-300';
+    else if (value === 'O(n)') colorClass = 'bg-teal-100 text-teal-900 border-teal-300';
+    else if (value === 'O(n log n)') colorClass = 'bg-blue-100 text-blue-900 border-blue-300';
+    else if (value === 'O(n²)') colorClass = 'bg-rose-100 text-rose-900 border-rose-300';
+    else if (value === 'O(nk)' || value === 'O(n + k)') colorClass = 'bg-indigo-100 text-indigo-900 border-indigo-300';
+  } else {
+    if (value === 'O(1)') colorClass = 'bg-emerald-100 text-emerald-900 border-emerald-300';
+    else if (value === 'O(log n)') colorClass = 'bg-blue-100 text-blue-900 border-blue-300';
+    else colorClass = 'bg-amber-100 text-amber-900 border-amber-300';
+  }
+
+  return (
+    <span className={`px-3 py-1 rounded-full text-sm font-bold border ${colorClass} shadow-sm inline-block`}>
+      {value}
+    </span>
+  );
+};
+
+const IconCheck = () => (
+  <svg className="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+  </svg>
+);
+
+const IconX = () => (
+  <svg className="w-5 h-5 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
+  </svg>
+);
+
+// --- Main Component ---
+
+export default function App() {
+  const [activeAlgoId, setActiveAlgoId] = useState<string>(ALGORITHMS[0].id);
+  const activeAlgo = ALGORITHMS.find(a => a.id === activeAlgoId)!;
+
+  return (
+    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans selection:bg-indigo-200 selection:text-indigo-900">
+      
+      {/* Header */}
+      <header className="bg-white border-b border-slate-200 shadow-sm sticky top-0 z-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <div className="w-8 h-8 bg-indigo-600 rounded-md flex items-center justify-center shadow-inner">
+              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
+              </svg>
+            </div>
+            <h1 className="text-xl font-extrabold tracking-tight text-slate-900">
+              Sorting Race 2.0 <span className="text-indigo-600 font-medium">| Theory & Reference</span>
+            </h1>
+          </div>
+          <nav className="hidden md:flex space-x-6 text-sm font-medium text-slate-500">
+            <a href="#" className="hover:text-indigo-600 transition-colors">Race Track</a>
+            <a href="#" className="text-indigo-600 border-b-2 border-indigo-600 pb-5 pt-5">Theory</a>
+            <a href="#" className="hover:text-indigo-600 transition-colors">Summary Stats</a>
+          </nav>
+        </div>
+      </header>
+
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+        
+        {/* Intro Section */}
+        <section className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 md:p-8">
+          <h2 className="text-2xl font-bold text-slate-900 mb-4">Algorithm Reference Guide</h2>
+          <p className="text-slate-600 max-w-3xl leading-relaxed">
+            Understanding the theoretical foundation of sorting algorithms is crucial for choosing the right tool for the job. 
+            Use this reference to explore time/space complexities, stability, and ideal use cases before running the race.
+          </p>
+        </section>
+
+        {/* Algorithm Explorer */}
+        <section className="flex flex-col lg:flex-row gap-8">
+          
+          {/* Sidebar Navigation */}
+          <div className="w-full lg:w-64 shrink-0">
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden sticky top-24">
+              <div className="p-4 bg-slate-100 border-b border-slate-200 font-semibold text-slate-700 uppercase tracking-wider text-xs">
+                Algorithms
+              </div>
+              <ul className="divide-y divide-slate-100">
+                {ALGORITHMS.map((algo) => (
+                  <li key={algo.id}>
+                    <button
+                      onClick={() => setActiveAlgoId(algo.id)}
+                      className={`w-full text-left px-4 py-3 text-sm font-medium transition-colors flex items-center justify-between ${
+                        activeAlgoId === algo.id 
+                          ? 'bg-indigo-50 text-indigo-700 border-l-4 border-indigo-600' 
+                          : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900 border-l-4 border-transparent'
+                      }`}
+                    >
+                      {algo.name}
+                      {activeAlgoId === algo.id && (
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      )}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+
+          {/* Detail View */}
+          <div className="flex-1 bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div className="p-6 md:p-8 border-b border-slate-200 bg-gradient-to-br from-white to-slate-50">
+              <div className="flex items-start justify-between mb-4">
+                <div>
+                  <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">{activeAlgo.name}</h2>
+                  <span className="inline-block mt-2 px-3 py-1 bg-slate-200 text-slate-700 text-xs font-bold uppercase tracking-widest rounded-md">
+                    {activeAlgo.type}
+                  </span>
+                </div>
+              </div>
+              <p className="text-lg text-slate-600 leading-relaxed">
+                {activeAlgo.description}
+              </p>
+            </div>
+
+            <div className="p-6 md:p-8 grid grid-cols-1 md:grid-cols-2 gap-8">
+              
+              {/* Complexity Table */}
+              <div className="space-y-6">
+                <h3 className="text-lg font-bold text-slate-900 border-b border-slate-200 pb-2">Complexity</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                    <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Best Case</div>
+                    <ComplexityBadge value={activeAlgo.timeComplexity.best} type="time" />
+                  </div>
+                  <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                    <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Average Case</div>
+                    <ComplexityBadge value={activeAlgo.timeComplexity.average} type="time" />
+                  </div>
+                  <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                    <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Worst Case</div>
+                    <ComplexityBadge value={activeAlgo.timeComplexity.worst} type="time" />
+                  </div>
+                  <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                    <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Space (Memory)</div>
+                    <ComplexityBadge value={activeAlgo.spaceComplexity} type="space" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Properties & Use Cases */}
+              <div className="space-y-6">
+                <h3 className="text-lg font-bold text-slate-900 border-b border-slate-200 pb-2">Properties</h3>
+                <ul className="space-y-4">
+                  <li className="flex items-center justify-between bg-slate-50 p-3 rounded-lg border border-slate-100">
+                    <span className="font-medium text-slate-700">Stable Sort</span>
+                    {activeAlgo.stable ? <IconCheck /> : <IconX />}
+                  </li>
+                  <li className="flex items-center justify-between bg-slate-50 p-3 rounded-lg border border-slate-100">
+                    <span className="font-medium text-slate-700">In-Place</span>
+                    {activeAlgo.inPlace ? <IconCheck /> : <IconX />}
+                  </li>
+                </ul>
+
+                <div className="space-y-4 pt-2">
+                  <div>
+                    <h4 className="text-sm font-bold text-emerald-700 uppercase tracking-wider mb-1 flex items-center">
+                      <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" /></svg>
+                      Ideal For
+                    </h4>
+                    <p className="text-sm text-slate-600">{activeAlgo.idealFor}</p>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-rose-700 uppercase tracking-wider mb-1 flex items-center">
+                      <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14H5.236a2 2 0 01-1.789-2.894l3.5-7A2 2 0 018.736 3h4.018a2 2 0 01.485.06l3.76.94m-7 10v5a2 2 0 002 2h.096c.5 0 .905-.405.905-.904 0-.715.211-1.413.608-2.008L17 13V4m-7 10h2m5-10h2a2 2 0 012 2v6a2 2 0 01-2 2h-2.5" /></svg>
+                      Pitfalls
+                    </h4>
+                    <p className="text-sm text-slate-600">{activeAlgo.pitfalls}</p>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </section>
+
+        {/* Educational Cards (Stability & Datasets) */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          
+          {/* Stability Explanation */}
+          <section className="bg-gradient-to-br from-indigo-900 to-slate-900 rounded-2xl shadow-lg border border-indigo-800 p-6 md:p-8 text-white relative overflow-hidden">
+            <div className="absolute top-0 right-0 -mt-4 -mr-4 w-32 h-32 bg-indigo-500 opacity-20 rounded-full blur-3xl"></div>
+            <h3 className="text-2xl font-bold mb-4 flex items-center">
+              <svg className="w-6 h-6 mr-2 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              Understanding Stability
+            </h3>
+            <p className="text-indigo-100 mb-6 leading-relaxed">
+              A sorting algorithm is <strong>stable</strong> if it preserves the relative order of equal elements. 
+              This is crucial when sorting objects by multiple criteria (e.g., sorting by First Name, then by Last Name).
+            </p>
+            
+            <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
+              <div className="text-sm text-indigo-300 font-semibold mb-2 uppercase tracking-wider">Example: Sort by Number</div>
+              <div className="flex flex-col space-y-3 font-mono text-sm">
+                <div className="flex items-center">
+                  <span className="w-20 text-slate-400">Input:</span>
+                  <div className="flex space-x-2">
+                    <span className="px-2 py-1 bg-slate-700 rounded text-white">5<sub className="text-rose-400">A</sub></span>
+                    <span className="px-2 py-1 bg-slate-700 rounded text-white">2</span>
+                    <span className="px-2 py-1 bg-slate-700 rounded text-white">5<sub className="text-emerald-400">B</sub></span>
+                  </div>
+                </div>
+                <div className="flex items-center">
+                  <span className="w-20 text-emerald-400">Stable:</span>
+                  <div className="flex space-x-2">
+                    <span className="px-2 py-1 bg-slate-700 rounded text-white">2</span>
+                    <span className="px-2 py-1 bg-slate-700 rounded text-white">5<sub className="text-rose-400">A</sub></span>
+                    <span className="px-2 py-1 bg-slate-700 rounded text-white">5<sub className="text-emerald-400">B</sub></span>
+                  </div>
+                </div>
+                <div className="flex items-center">
+                  <span className="w-20 text-rose-400">Unstable:</span>
+                  <div className="flex space-x-2">
+                    <span className="px-2 py-1 bg-slate-700 rounded text-white">2</span>
+                    <span className="px-2 py-1 bg-slate-700 rounded text-white">5<sub className="text-emerald-400">B</sub></span>
+                    <span className="px-2 py-1 bg-slate-700 rounded text-white">5<sub className="text-rose-400">A</sub></span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Dataset Presets Guide */}
+          <section className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 md:p-8">
+            <h3 className="text-2xl font-bold text-slate-900 mb-4 flex items-center">
+              <svg className="w-6 h-6 mr-2 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" /></svg>
+              Dataset Impact
+            </h3>
+            <p className="text-slate-600 mb-6 leading-relaxed">
+              Algorithms perform differently based on the initial state of the data. The Race Track includes presets to demonstrate these edge cases.
+            </p>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
+                <h4 className="font-bold text-slate-800 mb-1">Random</h4>
+                <p className="text-sm text-slate-600">The baseline. Shows the average-case time complexity for all algorithms.</p>
+              </div>
+              <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
+                <h4 className="font-bold text-slate-800 mb-1">Nearly Sorted</h4>
+                <p className="text-sm text-slate-600">Highlights the O(n) best-case scenario for Insertion Sort and Bubble Sort.</p>
+              </div>
+              <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
+
+
+---
+Return ONLY the complete src/App.tsx code with export default function App().

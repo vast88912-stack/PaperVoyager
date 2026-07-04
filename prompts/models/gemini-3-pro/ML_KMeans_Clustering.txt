@@ -1,0 +1,65 @@
+**Project:** K-Means Clustering Viz (Gold Standard)
+**Role:** Senior Creative Technologist.
+**Objective:** Build a high-complexity, single-file React+TS teaching dashboard that visualizes the K-Means Clustering algorithm, Centroids, and Voronoi tessellations.
+
+**Global UX Spec:**
+- Layout: Landing Page (Hero) -> Dashboard (Sidebar + Main + Inspector).
+- Theme: Scientific Dark Mode (Pastel Clusters).
+- Navigation: Dataset Selector (Blobs, Circles, Moons).
+- Inspector: "Cluster Metrics" (Inertia/Variance).
+
+**Module Plan (Landing + 5 Modules):**
+1. **Module 0: Hero / Finding Patterns**
+   - Visual: Unlabeled grey dots instantly snapping into colorful groups.
+   - Text: "Unsupervised Learning: Making sense of chaos."
+
+2. **Module 1: The Centroids**
+   - Concept: The center of gravity.
+   - Interactive: Click to place K initial centroids.
+   - Visual: Voronoi regions appear (colored zones).
+
+3. **Module 2: The Assignment Step**
+   - Concept: "Who is closest?"
+   - Animation: Lines fly from data points to their nearest centroid. Points change color.
+
+4. **Module 3: The Update Step**
+   - Concept: Moving the center.
+   - Animation: Centroids glide to the average position of their assigned points.
+   - Loop: Repeat Step 2 and 3 until convergence.
+
+5. **Module 4: The "K" Problem (Elbow Method)**
+   - Concept: How many clusters?
+   - Simulation: Run for K=1 to 10.
+   - Chart: Plot "Inertia" (Sum of Squared Errors).
+   - Interactive: Find the "Elbow" in the curve.
+
+6. **Module 5: The Clustering Challenge**
+   - Task: "Manual K-Means."
+   - Goal: Drag the centroids manually to minimize the Error. Can you beat the auto-algorithm?
+   - Scoring: How close to optimal Inertia?
+
+**Scoring & Gamification:**
+- **Data Scientist**: Identified the correct K.
+- **Centroid Sniper**: Optimal initial placement.
+
+**Implementation Notes:**
+- **Canvas**: For drawing Voronoi cells (using nearest pixel or polygon clipping).
+- **Math**: Euclidean distance.
+
+**Acceptance Checklist:**
+- [ ] Landing page.
+- [ ] Interactive Centroid placement.
+- [ ] Step-by-step E-M algorithm.
+- [ ] Voronoi Visualization.
+- [ ] Elbow Method chart.
+- [ ] Single file `src/App.tsx`.
+
+**Codegen Output Requirements:**
+- Return ONLY one file's code: `src/App.tsx`
+- Must include: `export default function App() { ... }`
+- No markdown fences in the final code output
+- If any optional runtime deps are used, list them explicitly at the end of the prompt under: `Runtime deps: ...`
+
+
+
+

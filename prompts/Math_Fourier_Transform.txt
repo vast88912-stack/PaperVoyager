@@ -1,0 +1,9 @@
+Project: Fourier Sketchpad (ChatGPT Edition)
+Role: Signal-processing-savvy frontend engineer.
+Objective: Let users draw a periodic signal and see Fourier series approximation.
+Design: split canvas (time domain / frequency domain) on light background.
+Features: freehand drawing; compute coefficients up to N harmonics; animate reconstruction; show magnitude/phase bar charts; preset signals (square, saw, triangle); Gibbs ringing explainer.
+Technical: use real-valued series; keep sampling rate explicit; allow export of CSV.
+Output: only src/App.tsx; default export; runtime deps listed if needed.
+
+

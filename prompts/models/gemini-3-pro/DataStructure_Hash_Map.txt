@@ -1,0 +1,69 @@
+**Project:** Hash Map Collision Arena (Gold Standard)
+**Role:** Senior Creative Technologist.
+**Objective:** Build a high-complexity, single-file React+TS teaching dashboard that visualizes the internals of Hash Tables, focusing on Hash Functions and Collision Resolution strategies.
+
+**Global UX Spec:**
+- Layout: Landing Page (Hero) -> Dashboard (Sidebar + Main + Inspector).
+- Theme: Scientific Dark Mode (Neon Purple/Cyan).
+- Navigation: Strategy Selector (Chaining vs Open Addressing).
+- Inspector: "Memory Tape" view and "Collision Counter".
+
+**Module Plan (Landing + 5 Modules):**
+1. **Module 0: Hero / The Pigeonhole Principle**
+   - Visual: 100 pigeons trying to fit into 10 holes. Chaos ensues.
+   - Text: "Mapping the infinite universe to finite memory."
+
+2. **Module 1: The Hash Function**
+   - Concept: Deterministic chaos.
+   - Interactive: Input string -> See the Hash Code -> See the Modulo Index.
+   - Visualization: "Avalanche Effect" - change 1 char, see the hash completely change.
+
+3. **Module 2: Separate Chaining (Linked Lists)**
+   - Concept: Buckets.
+   - Visualization: An array of buckets. Collisions spawn a Linked List hanging off the bucket.
+   - Simulation: Insert "Aa" and "BB" (often collide in Java). See the list grow.
+   - Metrics: "Max Bucket Length".
+
+4. **Module 3: Open Addressing (Linear/Quadratic Probing)**
+   - Concept: Finding the next empty slot.
+   - Visualization: A flat memory tape.
+   - Animation: When index `i` is full, the probe "hops" to `i+1` (Linear) or `i+1, i+4, i+9` (Quadratic).
+   - Problem: Show "Clustering" (big blocks of occupied cells).
+
+5. **Module 4: Resizing & Re-hashing**
+   - Concept: Load Factor threshold.
+   - Simulation: Fill the table until Load Factor > 0.75.
+   - Animation: The array doubles in size. All keys fly to their NEW positions (re-hashed).
+   - Cost: Show the CPU spike during resize.
+
+6. **Module 5: The Adversary Challenge**
+   - Task: "DoS the Hash Map".
+   - Goal: Given a simple hash function (e.g., `k % 10`), insert keys that ALL land in bucket 5.
+   - Scoring: Points for causing the longest collision chain.
+
+**Scoring & Gamification:**
+- **Hacker Rank**: Earned by successfully causing collisions.
+- **Efficiency Expert**: Earned by choosing a good table size and hash function.
+
+**Implementation Notes:**
+- Use `framer-motion` for keys moving into slots.
+- **Visualization**: Clear distinction between the "Key", "Hash", and "Index".
+- **Performance**: Handle up to ~100 items for visual clarity (no need for millions).
+
+**Acceptance Checklist:**
+- [ ] Landing page with Pigeonhole viz.
+- [ ] Hash Function explorer (Avalanche effect).
+- [ ] Chaining vs Probing visualization.
+- [ ] Dynamic Resizing animation.
+- [ ] "DoS Attack" challenge.
+- [ ] Single file `src/App.tsx`.
+
+**Codegen Output Requirements:**
+- Return ONLY one file's code: `src/App.tsx`
+- Must include: `export default function App() { ... }`
+- No markdown fences in the final code output
+- If any optional runtime deps are used, list them explicitly at the end of the prompt under: `Runtime deps: ...`
+
+
+
+

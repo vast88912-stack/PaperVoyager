@@ -1,0 +1,22 @@
+Topic ID Mapping (sorted by merged_token_count desc)
+T01: Sys_Virtual_Memory | type=Sys | tokens=22960
+T02: ML_Gradient_Descent | type=ML | tokens=18976
+T03: Math_Monte_Carlo_Estimation | type=Math | tokens=17858
+T04: Physics_Thermodynamics | type=Physics | tokens=17639
+T05: DataStructure_Hash_Map | type=DataStructure | tokens=17339
+T06: Math_Linear_Algebra_Eigen | type=Math | tokens=17283
+T07: Algorithm_Dynamic_Programming | type=Algorithm | tokens=17173
+T08: Sys_CPU_Scheduler | type=Sys | tokens=17030
+T09: Math_Fourier_Transform | type=Math | tokens=16862
+T10: Theory_Cellular_Automata | type=Theory | tokens=16707
+T11: ML_KMeans_Clustering | type=ML | tokens=16583
+T12: Genetic_Algorithm_Sandbox | type=Genetic | tokens=16556
+T13: Algorithm_Sorting_Race | type=Algorithm | tokens=15876
+T14: Physics_Optics_Lab | type=Physics | tokens=15859
+T15: ML_Neural_Network_Viz | type=ML | tokens=14944
+T16: Math_Chaos_Lorenz | type=Math | tokens=14917
+T17: DataStructure_Balanced_Trees | type=DataStructure | tokens=13483
+T18: Algorithm_Graph_Pathfinding | type=Algorithm | tokens=12046
+T19: Distributed_Raft_Consensus | type=Distributed | tokens=9784
+T20: Physics_Gravity_Orbits | type=Physics | tokens=9209
+T21: Physics_Fluid_CFD | type=Physics | tokens=8575

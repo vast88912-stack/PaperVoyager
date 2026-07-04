@@ -1,0 +1,8 @@
+Project: Virtual Memory Explorer (ChatGPT Edition)
+Role: OS visualization engineer.
+Objective: Teach paging, TLB, and replacement policies.
+Design: clean neutral palette; panels for virtual->physical mapping.
+Features: process generator; page table view; TLB hit/miss counters; run simulations for FIFO, LRU, Clock; visualization of page faults over time; interactive step-through of address translation.
+Output: only src/App.tsx; default export; runtime deps noted if any.
+
+

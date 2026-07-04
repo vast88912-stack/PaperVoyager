@@ -1,0 +1,67 @@
+**Project:** Fluid Dynamics Wind Tunnel (Gold Standard)
+**Role:** Senior Creative Technologist.
+**Objective:** Build a high-complexity, single-file React+TS teaching dashboard that simulates fluid flow using a Lattice Boltzmann Method (LBM) or a stable Navier-Stokes solver on a grid.
+
+**Global UX Spec:**
+- Layout: Landing Page (Hero) -> Dashboard (Sidebar + Main + Inspector).
+- Theme: Scientific Dark Mode (Aerospace Blue).
+- Navigation: Scenario Selector (Wind Tunnel, Pipe, Obstacles).
+- Inspector: "Fluid Properties" (Viscosity, Velocity, Pressure).
+
+**Module Plan (Landing + 5 Modules):**
+1. **Module 0: Hero / The Flow**
+   - Visual: Colorful smoke streams flowing over a sports car silhouette.
+   - Text: "The invisible forces that shape our world."
+
+2. **Module 1: The Particle Grid (LBM)**
+   - Concept: Microscopic view.
+   - Visualization: Zoom in to see the "Lattice". Particles hop from cell to cell.
+   - Interactive: Click a cell to add density.
+
+3. **Module 2: The Wind Tunnel**
+   - Concept: Laminar vs Turbulent.
+   - Visualization: A continuous flow from left to right.
+   - Interactive: Draw "Walls" or "Obstacles" (Circles, Squares) in the flow.
+   - Animation: See the streamlines bend and form vortices (Von Karman Vortex Street).
+
+4. **Module 3: Viscosity & Reynolds Number**
+   - Concept: Honey vs Water.
+   - Controls: Slider for Viscosity.
+   - Simulation: High viscosity = smooth flow. Low viscosity = chaotic turbulence.
+
+5. **Module 4: Pressure Field**
+   - Concept: Bernoulli's Principle.
+   - Visualization: Toggle "Color Mode". Show Pressure (Red=High, Blue=Low) vs Velocity.
+   - Observation: Notice low pressure behind the obstacle (Drag).
+
+6. **Module 5: The Aerodynamics Challenge**
+   - Task: "Minimize Drag."
+   - Goal: Draw a shape that creates the smallest "wake" (turbulence zone) behind it.
+   - Scoring: Drag Coefficient calculation.
+
+**Scoring & Gamification:**
+- **Aero Engineer**: Earned by creating a streamlined shape.
+- **Turbulence Master**: Earned by generating a stable Vortex Street.
+
+**Implementation Notes:**
+- **Performance**: This is the HARDEST app. Use a WebGL shader if possible, or a highly optimized 2D Canvas array loop.
+- **Algorithm**: Lattice Boltzmann (D2Q9) is easiest to implement in JS grid.
+- **Resolution**: Keep grid small (e.g., 100x50) for CPU performance.
+
+**Acceptance Checklist:**
+- [ ] Landing page with smoke flow.
+- [ ] Real-time Fluid Simulation (LBM).
+- [ ] Interactive Obstacle Drawing.
+- [ ] Viscosity Slider.
+- [ ] Pressure/Velocity visualization modes.
+- [ ] Single file `src/App.tsx`.
+
+**Codegen Output Requirements:**
+- Return ONLY one file's code: `src/App.tsx`
+- Must include: `export default function App() { ... }`
+- No markdown fences in the final code output
+- If any optional runtime deps are used, list them explicitly at the end of the prompt under: `Runtime deps: ...`
+
+
+
+

@@ -1,0 +1,9 @@
+Project: Eigen Explorer (ChatGPT Edition)
+Role: Linear algebra communicator.
+Objective: Visualize eigenvectors/values for 2x2 matrices.
+Design: clean minimal with grid background.
+Features: matrix editor (a,b,c,d) with presets; vector field plot showing stretch/rotation; animate power iteration convergence; show determinant/trace and stability region; complex eigenvalues explanation card.
+Technical: avoid external math libs; include numeric stability guard.
+Output: only src/App.tsx; default export; runtime deps noted if any.
+
+

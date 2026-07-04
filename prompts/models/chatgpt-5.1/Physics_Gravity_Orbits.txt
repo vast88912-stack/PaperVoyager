@@ -1,0 +1,7 @@
+Project: Orbit Playground (ChatGPT Edition)
+Role: Physics-friendly UI engineer.
+Objective: Simulate N-body gravity with presets (two-body, three-body, many-body swirls).
+Design: starfield dark background; trails with color per body.
+Features: add/remove bodies; mass/velocity sliders; show energy/momentum totals; integrator choice (Euler, Verlet); collision merge toggle; export initial conditions as JSON.
+Output: only src/App.tsx; default export; runtime deps listed if used.
+

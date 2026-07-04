@@ -1,0 +1,70 @@
+**Project:** Graph Pathfinding Universe (Gold Standard)
+**Role:** Senior Creative Technologist.
+**Objective:** Build a high-complexity, single-file React+TS teaching dashboard that deeply explains Graph Search Algorithms (Dijkstra, A*, BFS, DFS) through interactive visualizations on a grid.
+
+**Global UX Spec:**
+- Layout: Landing Page (Hero) -> Dashboard (Sidebar + Main + Inspector).
+- Theme: Scientific Dark Mode (Slate/Zinc palette).
+- Navigation: Sidebar with algorithm selection and tutorial steps.
+- Inspector: "Pathfinder Log" showing visited nodes, fringe size, and current cost.
+
+**Module Plan (Landing + 5 Modules):**
+1. **Module 0: Hero / The Maze Runner**
+   - Visual: An auto-playing demo of a swarm of particles finding a path through a maze.
+   - Text: "Navigation is the heart of modern robotics and maps. See how machines 'see' the world."
+   - Action: "Start Exploration" button.
+
+2. **Module 1: Blind Search (BFS & DFS)**
+   - Concept: Exploring without heuristics.
+   - Controls: Grid size, Obstacle density, Animation speed.
+   - Visualization: A grid where BFS expands in a circle (wavefront) vs DFS snake-like exploration.
+   - Interactive: Click to place walls.
+
+3. **Module 2: The Cost of Travel (Dijkstra)**
+   - Concept: Weighted graphs (mud vs road).
+   - Controls: "Paint Terrain" tool (High cost tiles).
+   - Visualization: Heatmap of "Current Cost" to reach each node.
+   - Simulation: Show how Dijkstra prioritizes lower cost paths, avoiding the "mud".
+
+4. **Module 3: Heuristic Magic (A*)**
+   - Concept: Guiding the search with a "Guess" (Manhattan vs Euclidean).
+   - Controls: Slider for Heuristic Weight (Greedy Best-First <-> A* <-> Dijkstra).
+   - Visualization: Show `f(n) = g(n) + h(n)` arrows on nodes.
+
+5. **Module 4: Algorithm Race Arena**
+   - Concept: Side-by-side comparison.
+   - Layout: Split screen. Left: Dijkstra. Right: A*.
+   - Simulation: Run both on the SAME random maze. Plot "Nodes Visited" vs "Path Length".
+   - Goal: Show A* is faster but requires a good heuristic.
+
+6. **Module 5: The Pathfinder Challenge**
+   - Concept: Gamified test.
+   - Task: "Design a maze where DFS finds the exit faster than BFS" or "Trick the Greedy algorithm".
+   - Scoring: Award points for creating counter-intuitive maps.
+
+**Scoring & Gamification:**
+- **Research Points**: Earned by running simulations, reading tooltips, and winning the Challenge.
+- **Progress Bar**: "Algorithm Mastery: [||||||....] 60%"
+
+**Implementation Notes:**
+- Use `lucide-react` for icons.
+- Use `framer-motion` for smooth UI transitions.
+- **CRITICAL**: Use HTML5 `<canvas>` for the grid rendering. DOM nodes (divs) will be too slow for 50x50 grids.
+- Implement a MinHeap/PriorityQueue class internally for A*/Dijkstra.
+
+**Acceptance Checklist:**
+- [ ] Landing page with "Wow" particle pathfinding animation.
+- [ ] BFS, DFS, Dijkstra, A* implemented.
+- [ ] "Race Mode" with side-by-side canvas.
+- [ ] Terrain painting (weights) works.
+- [ ] Single file `src/App.tsx`.
+
+**Codegen Output Requirements:**
+- Return ONLY one file's code: `src/App.tsx`
+- Must include: `export default function App() { ... }`
+- No markdown fences in the final code output
+- If any optional runtime deps are used (e.g., `lucide-react`), list them explicitly at the end of the prompt under: `Runtime deps: ...`
+
+
+
+

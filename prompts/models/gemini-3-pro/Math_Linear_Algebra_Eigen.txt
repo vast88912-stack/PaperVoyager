@@ -1,0 +1,68 @@
+**Project:** Linear Algebra Eigen-Space (Gold Standard)
+**Role:** Senior Creative Technologist.
+**Objective:** Build a high-complexity, single-file React+TS teaching dashboard that visualizes Linear Transformations, Eigenvalues, and Eigenvectors.
+
+**Global UX Spec:**
+- Layout: Landing Page (Hero) -> Dashboard (Sidebar + Main + Inspector).
+- Theme: Scientific Dark Mode (Grid/Blueprint aesthetic).
+- Navigation: Transformation Selector (Rotate, Scale, Shear, Custom).
+- Inspector: "Matrix Values" and "Vector Properties".
+
+**Module Plan (Landing + 5 Modules):**
+1. **Module 0: Hero / The Matrix**
+   - Visual: A 3D grid twisting and warping.
+   - Text: "Matrices aren't just numbers. They are machines that stretch space."
+
+2. **Module 1: The Transformation (2D Grid)**
+   - Concept: Basis Vectors (i-hat, j-hat).
+   - Interactive: Drag the basis vectors `i` and `j`.
+   - Visualization: See the entire grid warp. A "F" shape follows the grid.
+   - Matrix: Show the [ a b ; c d ] matrix updating in real-time.
+
+3. **Module 2: Eigenvectors (The Invariant Axes)**
+   - Concept: Vectors that don't get knocked off their span.
+   - Interactive: Apply a Shear/Scale.
+   - Visualization: Highlight the vector(s) that *stay on their line*.
+   - Math: `Av = λv`. Show `v` (Eigenvector) and `λ` (Eigenvalue - stretch factor).
+
+4. **Module 3: Determinant (Area Scale)**
+   - Concept: Changing the size of space.
+   - Interactive: Squeeze the grid until it flips (Negative Determinant).
+   - Visualization: A unit square (Area=1) transforming into a parallelogram (Area=Det).
+
+5. **Module 4: SVD (Singular Value Decomposition)**
+   - Concept: Rotate -> Stretch -> Rotate.
+   - Animation: Decompose a random matrix transformation into 3 distinct steps.
+   - Visual: Show the unit circle turning into an ellipse.
+
+6. **Module 5: The "Find the Eigen" Challenge**
+   - Task: "Align the vector."
+   - Goal: Given a hidden transformation, rotate a test vector until it stops changing direction (finding the Eigenvector manually).
+   - Scoring: Accuracy of angle.
+
+**Scoring & Gamification:**
+- **Space Cadet**: Earned by exploring Determinants.
+- **Eigen Hunter**: Earned by finding hidden Eigenvectors.
+
+**Implementation Notes:**
+- **Canvas**: For drawing the grid lines and vectors efficiently.
+- **Math**: Need a small Linear Algebra helper (matrix multiply, det).
+- **Controls**: Draggable vector heads are key for intuition.
+
+**Acceptance Checklist:**
+- [ ] Landing page with warping grid.
+- [ ] Interactive 2x2 Matrix Grid.
+- [ ] Eigenvector visualization (highlighting invariant lines).
+- [ ] Determinant (Area) visualization.
+- [ ] Manual Eigenvector finding game.
+- [ ] Single file `src/App.tsx`.
+
+**Codegen Output Requirements:**
+- Return ONLY one file's code: `src/App.tsx`
+- Must include: `export default function App() { ... }`
+- No markdown fences in the final code output
+- If any optional runtime deps are used, list them explicitly at the end of the prompt under: `Runtime deps: ...`
+
+
+
+

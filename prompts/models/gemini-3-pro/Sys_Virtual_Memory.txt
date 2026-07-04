@@ -1,0 +1,68 @@
+**Project:** Virtual Memory & Paging (Gold Standard)
+**Role:** Senior Creative Technologist.
+**Objective:** Build a high-complexity, single-file React+TS teaching dashboard that visualizes OS Memory Management (Paging, TLB, Page Faults, LRU).
+
+**Global UX Spec:**
+- Layout: Landing Page (Hero) -> Dashboard (Sidebar + Main + Inspector).
+- Theme: Scientific Dark Mode (Silicon Chip / Hardware).
+- Navigation: Visualization Selector (Translation, Replacement).
+- Inspector: "RAM View" vs "Disk View".
+
+**Module Plan (Landing + 5 Modules):**
+1. **Module 0: Hero / 640K is Not Enough**
+   - Visual: Blocks of memory filling up and swapping to disk.
+   - Text: "Virtual Memory: Faking abundance."
+
+2. **Module 1: Virtual to Physical Translation**
+   - Concept: Page Table.
+   - Interactive: Request Virtual Address `0xA1`.
+   - Visual: Follow the wire -> Page Table -> Physical Frame `0x04`.
+   - Error: "Page Fault" (Not in RAM).
+
+3. **Module 2: Page Replacement Algorithms**
+   - Concept: Who gets kicked out?
+   - Visualization: 4 RAM Frames.
+   - Simulation: Access sequence: 1, 2, 3, 4, 1, 2, 5...
+   - Compare: FIFO vs LRU (Least Recently Used).
+   - Visual: Highlight the "Victim" page.
+
+4. **Module 3: Thrashing**
+   - Concept: Too many active processes.
+   - Simulation: Increase "Working Set" size > RAM size.
+   - Visual: Constant swapping (Red flashing). CPU utilization drops to 0.
+
+5. **Module 4: TLB (Translation Lookaside Buffer)**
+   - Concept: Caching translations.
+   - Simulation: Hit vs Miss.
+   - Visual: Fast path (TLB Hit) vs Slow path (Page Table Walk).
+
+6. **Module 5: The Memory Master Challenge**
+   - Task: "Manual LRU."
+   - Goal: Predict which page will be evicted next given a sequence of accesses.
+   - Scoring: Prediction accuracy.
+
+**Scoring & Gamification:**
+- **Memory Architect**: Understanding TLB.
+- **Swap Manager**: Preventing thrashing.
+
+**Implementation Notes:**
+- **Visuals**: Grid of blocks for RAM frames.
+- **Animation**: Blocks moving between RAM and Disk (Swap).
+
+**Acceptance Checklist:**
+- [ ] Landing page.
+- [ ] Address Translation flow.
+- [ ] LRU vs FIFO comparison.
+- [ ] Thrashing simulation.
+- [ ] Manual Eviction game.
+- [ ] Single file `src/App.tsx`.
+
+**Codegen Output Requirements:**
+- Return ONLY one file's code: `src/App.tsx`
+- Must include: `export default function App() { ... }`
+- No markdown fences in the final code output
+- If any optional runtime deps are used, list them explicitly at the end of the prompt under: `Runtime deps: ...`
+
+
+
+

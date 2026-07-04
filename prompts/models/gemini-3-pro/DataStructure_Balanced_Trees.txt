@@ -1,0 +1,68 @@
+**Project:** Balanced Tree Arboretum (Gold Standard)
+**Role:** Senior Creative Technologist.
+**Objective:** Build a high-complexity, single-file React+TS teaching dashboard that visualizes the self-balancing magic of AVL and Red-Black Trees.
+
+**Global UX Spec:**
+- Layout: Landing Page (Hero) -> Dashboard (Sidebar + Main + Inspector).
+- Theme: Scientific Dark Mode (Forest Green/Brown palette).
+- Navigation: Tree Type Selector (BST vs AVL vs Red-Black).
+- Inspector: "Rotation Log" and Tree Metrics (Height, Balance Factor).
+
+**Module Plan (Landing + 5 Modules):**
+1. **Module 0: Hero / The Unbalanced Nightmare**
+   - Visual: A degenerate BST (linked list) growing linearly vs a Balanced Tree growing logarithmically.
+   - Text: "In a chaotic world, balance is the key to speed."
+
+2. **Module 1: The Binary Search Tree (BST)**
+   - Concept: The baseline.
+   - Interactive: Insert numbers 1, 2, 3, 4, 5. Watch it become a line.
+   - Metrics: Show "Search Cost" rising linearly.
+
+3. **Module 2: The AVL Tree (Strict Balance)**
+   - Concept: Height balancing.
+   - Visualization: Nodes show their "Balance Factor" (-1, 0, +1).
+   - Animation: **Visual Rotation**. When a node goes out of balance, show the "Left Rotate" or "Right Rotate" animation slowly.
+   - Interactive: "Try to break it" - Insert sorted data and watch it rotate.
+
+4. **Module 3: The Red-Black Tree (Pragmatic Balance)**
+   - Concept: Color flipping.
+   - Visualization: Nodes are Red or Black.
+   - Logic: Show the 4 rules violations and the fix (Recolor vs Rotate).
+   - Interactive: Step-by-step insertion.
+
+5. **Module 4: Tree Performance Lab**
+   - Concept: AVL vs Red-Black.
+   - Simulation: Insert 100 random nodes.
+   - Metrics: Compare "Max Height" and "Rotations Performed".
+   - Goal: Show AVL is shorter (better lookup) but does more rotations (slower insert) than RB.
+
+6. **Module 5: The Balance Challenge**
+   - Task: "Perform a manual Right Rotation on this subtree."
+   - Interaction: Drag and drop nodes to their new positions to satisfy the rotation rule.
+   - Scoring: Points for correct structural manipulation.
+
+**Scoring & Gamification:**
+- **Arborist Badge**: Earned by mastering all tree types.
+- **Speed Run**: How fast can you manually rebalance a tree?
+
+**Implementation Notes:**
+- Use `framer-motion` layout animations for the nodes moving during rotation. This is CRITICAL for understanding.
+- Use SVG lines for edges connecting nodes.
+- **Tree Layout Algorithm**: Implement a Reingold-Tilford or similar algorithm to position nodes prettily.
+
+**Acceptance Checklist:**
+- [ ] Landing page comparing O(N) vs O(log N).
+- [ ] BST, AVL, RB Trees implemented.
+- [ ] Animated Rotations (nodes fly to new spots).
+- [ ] Manual Rotation Challenge.
+- [ ] Single file `src/App.tsx`.
+
+**Codegen Output Requirements:**
+- Return ONLY one file's code: `src/App.tsx`
+- Must include: `export default function App() { ... }`
+- No markdown fences in the final code output
+- If any optional runtime deps are used, list them explicitly at the end of the prompt under: `Runtime deps: ...`
+
+
+
+

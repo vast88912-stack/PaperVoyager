@@ -1,0 +1,15 @@
+Project: Pathfinding Playground (ChatGPT Edition)
+Role: Senior Creative Technologist.
+Objective: Visualize BFS, Dijkstra, A*, and bidirectional search on a grid graph.
+Design: Futuristic neon on dark grid; compact sidebar with algorithm selector and weights toggle.
+Modules:
+1) Hero: short mission text + Start button.
+2) Grid Editor: set start/goal, draw walls, toggle weighted cells.
+3) Algorithm Run: animated frontier expansion with color legend per algorithm.
+4) Heuristic Inspector: show Manhattan vs Euclidean cost charts when A* selected.
+5) Complexity Card: live counters for visited nodes, frontier size, path cost.
+Interactions: step/pause/reset; random maze generator; export current grid to JSON.
+Technical: deterministic random seed display; ensure algorithms share a common interface; avoid heavy deps.
+Output Requirements: only src/App.tsx, default export; list optional deps in "Runtime deps" line.
+
+

@@ -1,0 +1,9 @@
+Project: Gradient Descent Playground (ChatGPT Edition)
+Role: ML visualization engineer.
+Objective: Teach GD, Momentum, and Adam on 2D functions without relying on papers.
+Design: bright teal on charcoal; sidebar for hyperparameters.
+Modules: hero intro; function selector (bowl, saddle, Rastrigin); path overlay; LR slider; momentum vs Adam comparison; blindfold challenge with only gradient hints.
+Technical: compute gradients analytically or finite diff; animate with requestAnimationFrame; keep math self-contained.
+Output: only src/App.tsx; default export; note runtime deps if any.
+
+

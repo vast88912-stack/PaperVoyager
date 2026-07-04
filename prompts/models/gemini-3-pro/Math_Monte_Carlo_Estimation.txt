@@ -1,0 +1,70 @@
+**Project:** Monte Carlo Simulation Lab (Gold Standard)
+**Role:** Senior Creative Technologist.
+**Objective:** Build a high-complexity, single-file React+TS teaching dashboard that explains Monte Carlo methods: solving deterministic problems using randomness.
+
+**Global UX Spec:**
+- Layout: Landing Page (Hero) -> Dashboard (Sidebar + Main + Inspector).
+- Theme: Scientific Dark Mode (Probability Green).
+- Navigation: Experiment Selector.
+- Inspector: "Sample Count", "Current Estimate", "Error Margin".
+
+**Module Plan (Landing + 5 Modules):**
+1. **Module 0: Hero / Rolling the Dice**
+   - Visual: Thousands of dice rolling to form a perfect Gaussian Bell Curve.
+   - Text: "Order emerges from large numbers. Randomness is a tool."
+
+2. **Module 1: Estimating Pi (The Dartboard)**
+   - Concept: Area ratio.
+   - Visualization: A square with an inscribed circle.
+   - Animation: Throw thousands of random "darts".
+   - Logic: `Pi ~ 4 * (Hits / Total)`.
+   - Interactive: Speed up time. Watch the digits of Pi stabilize.
+
+3. **Module 2: Numerical Integration**
+   - Concept: Finding area under weird curves.
+   - Visualization: A complex function `f(x)`.
+   - Animation: Random sampling points below/above the curve.
+   - Comparison: Riemann Sums (Rectangles) vs Monte Carlo.
+
+4. **Module 3: The Monty Hall Problem**
+   - Concept: Conditional Probability.
+   - Interactive: Play the game manually (3 doors).
+   - Simulation: Run 1000 automated games with "Switch" strategy vs "Stay".
+   - Result: Prove the 66% win rate for Switching.
+
+5. **Module 4: Random Walk (Brownian Motion)**
+   - Concept: Stock markets / Diffusion.
+   - Visualization: 1D and 2D Random Walks.
+   - Metrics: "Distance from Origin" vs `sqrt(Time)`.
+
+6. **Module 5: The "Casino House Edge" Challenge**
+   - Task: "Beat the House."
+   - Goal: Design a betting strategy (Martingale, etc.) and run a Monte Carlo sim to see if you go bankrupt.
+   - Result: Show that with infinite time, the House always wins (if edge > 0).
+
+**Scoring & Gamification:**
+- **Statistician Rank**: Earned by getting Pi to 3.1415...
+- **Gambler**: Earned by going bankrupt in the Casino sim.
+
+**Implementation Notes:**
+- **Canvas**: For rendering high-speed dots (darts).
+- **RNG**: Use `Math.random()`.
+- **Chart**: Show the "Convergence" line graph (Error vs N).
+
+**Acceptance Checklist:**
+- [ ] Landing page with Bell Curve.
+- [ ] Pi Estimation (Darts).
+- [ ] Integration (Area).
+- [ ] Monty Hall (Auto-play).
+- [ ] Random Walk viz.
+- [ ] Single file `src/App.tsx`.
+
+**Codegen Output Requirements:**
+- Return ONLY one file's code: `src/App.tsx`
+- Must include: `export default function App() { ... }`
+- No markdown fences in the final code output
+- If any optional runtime deps are used, list them explicitly at the end of the prompt under: `Runtime deps: ...`
+
+
+
+

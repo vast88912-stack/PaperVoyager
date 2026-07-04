@@ -1,0 +1,22 @@
+Topic Abbreviation Mapping
+==========================
+
+Sys-VM          | Sys_Virtual_Memory                       | Systems              | 22960 tokens
+Sys-Sched       | Sys_CPU_Scheduler                        | Systems              | 17030 tokens
+Alg-DP          | Algorithm_Dynamic_Programming            | Algorithms           | 17173 tokens
+Alg-SR          | Algorithm_Sorting_Race                   | Algorithms           | 15876 tokens
+Alg-GP          | Algorithm_Graph_Pathfinding              | Algorithms           | 12046 tokens
+DS-HM           | DataStructure_Hash_Map                   | Data Structures      | 17339 tokens
+DS-BT           | DataStructure_Balanced_Trees             | Data Structures      | 13483 tokens
+Dist-Raft       | Distributed_Raft_Consensus               | Distributed Sys.     |  9784 tokens
+Math-MC         | Math_Monte_Carlo_Estimation              | Mathematics          | 17858 tokens
+Math-Eig        | Math_Linear_Algebra_Eigen                | Mathematics          | 17283 tokens
+Math-FFT        | Math_Fourier_Transform                   | Mathematics          | 16862 tokens
+Math-Lorenz     | Math_Chaos_Lorenz                        | Mathematics          | 14917 tokens
+ML-GD           | ML_Gradient_Descent                      | Machine Learning     | 18976 tokens
+ML-KM           | ML_KMeans_Clustering                     | Machine Learning     | 16583 tokens
+ML-NNV          | ML_Neural_Network_Viz                    | Machine Learning     | 14944 tokens
+Phys-Therm      | Physics_Thermodynamics                   | Physics              | 17639 tokens
+Phys-Opt        | Physics_Optics_Lab                       | Physics              | 15859 tokens
+Phys-Orbit      | Physics_Gravity_Orbits                   | Physics              |  9209 tokens
+Phys-CFD        | Physics_Fluid_CFD                        | Physics              |  8575 tokens

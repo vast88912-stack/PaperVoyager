@@ -1,0 +1,13 @@
+Project: Sorting Race 2.0 (ChatGPT Edition)
+Role: Frontend engineer + pedagogy.
+Objective: Compare sorting algorithms (bubble, insertion, merge, quick, heap, radix) on arrays and nearly-sorted data.
+Design: Split view with race track lanes; light theme with high contrast colors.
+Features:
+- Dataset presets: random, nearly sorted, reversed, few uniques.
+- Controls: array size slider, speed slider, shuffle button.
+- Visuals: bar chart per lane with live swaps/highlights; show operation counts.
+- Stability toggle and explanation card.
+- Post-run summary table with time steps and swap counts.
+Technical: keep algorithms in pure functions; allow async stepping via requestAnimationFrame.
+Output: only src/App.tsx, default export; optional deps declared at end.
+

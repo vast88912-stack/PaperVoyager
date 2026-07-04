@@ -1,0 +1,38 @@
+# Secrets
+.env
+.env.*
+!.env.example
+!.env.*.example
+env.txt
+
+# Hugging Face / local download cache
+.cache/
+*.metadata
+*.incomplete
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+
+# Node / web builds
+node_modules/
+dist/
+build/
+*.tsbuildinfo
+
+# Generated logs and temporary artifacts
+*.log
+*.tmp
+*.bak
+outputs/**/.build.install.log
+
+# OS/editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

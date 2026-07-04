@@ -1,0 +1,66 @@
+**Project:** Neural Network Playground (Gold Standard)
+**Role:** Senior Creative Technologist.
+**Objective:** Build a high-complexity, single-file React+TS teaching dashboard that visualizes a small Multi-Layer Perceptron (MLP) training on 2D data (like TensorFlow Playground but lighter).
+
+**Global UX Spec:**
+- Layout: Landing Page (Hero) -> Dashboard (Sidebar + Main + Inspector).
+- Theme: Scientific Dark Mode (Nodes and Edges).
+- Navigation: Problem Selector (XOR, Circle, Linear).
+- Inspector: "Training Loss" graph.
+
+**Module Plan (Landing + 5 Modules):**
+1. **Module 0: Hero / The Brain**
+   - Visual: Neurons firing and synapses strengthening.
+   - Text: "Layers of simple math creating complex intelligence."
+
+2. **Module 1: The Perceptron (Single Neuron)**
+   - Concept: Linear Decision Boundary.
+   - Visualization: Weights w1, w2 and Bias b.
+   - Interactive: Adjust weights manually. Watch the line rotate on the 2D plane.
+
+3. **Module 2: Feature Engineering**
+   - Concept: X1, X2 vs X1^2, X1*X2.
+   - Interactive: Add inputs.
+   - Visual: See how X^2 allows a circle boundary (Polynomial).
+
+4. **Module 3: Hidden Layers (Deep Learning)**
+   - Concept: Folding Space.
+   - Interactive: Add a hidden layer with 3 neurons.
+   - Visual: The output is now a polygon/complex shape. Solving XOR.
+
+5. **Module 4: Backpropagation (Training)**
+   - Concept: Gradient Descent on Weights.
+   - Simulation: "Play" button.
+   - Visual: Edges thicken/thin. Background heatmap evolves to match data.
+   - Graph: Loss curve dropping.
+
+6. **Module 5: The Architect Challenge**
+   - Task: "Solve the Spiral."
+   - Goal: Build the smallest network (fewest nodes/layers) that fits the Spiral dataset.
+   - Scoring: (1 / Nodes) * Accuracy.
+
+**Scoring & Gamification:**
+- **Deep Learner**: Solved XOR.
+- **Minimalist**: Solved Spiral with minimal nodes.
+
+**Implementation Notes:**
+- **Math**: Implement a tiny `MatMul` and `Sigmoid/ReLU` forward pass + simple backprop manually. Do NOT import TF.js (too big). Keep it to ~3 layers max.
+- **Canvas**: For the decision boundary heatmap (render pixel grid).
+
+**Acceptance Checklist:**
+- [ ] Landing page.
+- [ ] Single Neuron viz.
+- [ ] Hidden Layer builder.
+- [ ] Real-time Training animation.
+- [ ] XOR/Spiral datasets.
+- [ ] Single file `src/App.tsx`.
+
+**Codegen Output Requirements:**
+- Return ONLY one file's code: `src/App.tsx`
+- Must include: `export default function App() { ... }`
+- No markdown fences in the final code output
+- If any optional runtime deps are used, list them explicitly at the end of the prompt under: `Runtime deps: ...`
+
+
+
+

@@ -1,0 +1,53 @@
+\begin{table*}[t]
+\centering
+\setlength{\tabcolsep}{1.6mm}{
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{@{}lcccccccccc@{}}
+\toprule \toprule
+Method &
+Alg-DP & Alg-GP & Alg-SR &
+DS-BT & DS-HM &
+Dist-Raft &
+Math-Lorenz & Math-FFT & Math-Eig & Math-MC \\
+\midrule
+ChatGPT-5.2 & 39.9\% & 41.7\% & 52.6\% & 33.9\% & 46.3\% & 53.0\% & 39.2\% & 77.3\% & 72.4\% & 53.5\% \\
+Kimi-K2 & 54.8\% & 40.6\% & 53.9\% & 29.8\% & 54.7\% & 55.3\% & 50.4\% & 84.3\% & 69.1\% & 62.0\% \\
+MiniMax & 28.0\% & 45.0\% & 15.0\% & 0.0\% & 28.3\% & 48.3\% & 65.0\% & 16.7\% & 31.3\% & 48.3\% \\
+Qwen-2.5 & 35.0\% & 20.0\% & 35.0\% & 36.7\% & 35.0\% & 35.0\% & 21.7\% & 0.0\% & 28.3\% & 30.0\% \\
+Gemini-3-Pro & 49.3\% & \textbf{82.0\%} & \textbf{55.0\%} & 50.7\% & 45.0\% & 50.0\% & 33.3\% & 33.0\% & 65.0\% & 47.0\% \\
+\midrule
+PV (Single-shot) & 51.7\% & 80.7\% & \textbf{55.0\%} & 47.3\% & 41.7\% & 50.0\% & 30.7\% & 32.0\% & 55.0\% & 45.0\% \\
+PV (Block Pipeline) & 89.7\% & 75.0\% & 53.3\% & 23.0\% & \textbf{72.0\%} & \textbf{82.0\%} & \textbf{89.0\%} & \textbf{92.3\%} & \textbf{85.0\%} & \textbf{93.7\%} \\
+\textbf{PV (Scored, Ours)} & \textbf{93.0\%} & 75.0\% & 53.3\% & \textbf{52.7\%} & \textbf{72.0\%} & \textbf{82.0\%} & \textbf{89.0\%} & \textbf{92.3\%} & \textbf{85.0\%} & \textbf{93.7\%} \\
+\midrule
+\midrule
+Method &
+ML-GD & ML-KM & ML-NNV &
+Phys-CFD & Phys-Orbit & Phys-Opt & Phys-Therm &
+Sys-Sched & Sys-VM &
+Overall \\
+\midrule
+ChatGPT-5.2 & 24.9\% & 30.6\% & 29.4\% & 53.8\% & 41.4\% & 71.9\% & 40.3\% & 52.4\% & 45.8\% & 47.4\% \\
+Kimi-K2 & 38.8\% & 74.3\% & 29.3\% & 63.5\% & 84.5\% & 38.1\% & 0.0\% & 62.6\% & 52.6\% & 52.6\% \\
+MiniMax & 55.0\% & 68.3\% & 0.0\% & 72.0\% & 65.0\% & \textbf{85.0\%} & 41.7\% & 45.0\% & 34.0\% & 41.7\% \\
+Qwen-2.5 & \textbf{93.0\%} & 33.3\% & 77.3\% & 1.7\% & 70.7\% & 46.7\% & 45.0\% & 31.7\% & 70.3\% & 39.3\% \\
+Gemini-3-Pro & 84.0\% & 57.3\% & 55.0\% & 83.0\% & 58.3\% & 79.3\% & 72.7\% & 35.0\% & 85.0\% & 58.9\% \\
+\midrule
+PV (Single-shot) & 84.0\% & 51.7\% & \textbf{84.0\%} & 73.3\% & 55.0\% & 81.3\% & 57.3\% & 35.0\% & 85.0\% & 57.7\% \\
+PV (Block Pipeline) & 92.7\% & \textbf{95.0\%} & 19.3\% & \textbf{88.0\%} & \textbf{89.7\%} & \textbf{85.0\%} & \textbf{92.3\%} & \textbf{84.0\%} & \textbf{92.0\%} & 78.6\% \\
+\textbf{PV (Scored, Ours)} & 92.7\% & \textbf{95.0\%} & 83.0\% & \textbf{88.0\%} & \textbf{89.7\%} & \textbf{85.0\%} & \textbf{92.3\%} & \textbf{84.0\%} & \textbf{92.0\%} & \textbf{83.7\%} \\
+\bottomrule \bottomrule
+\end{tabular}
+}}
+\caption{
+Task success rates (\%) across 19 representative tasks (VLM-Visual judge for all models except ChatGPT-5.2 and Kimi-K2, which use rule-based scores).
+\textbf{Bold} indicates the best result per task.
+Abbreviations: Alg-DP (dynamic programming), Alg-GP (graph pathfinding), Alg-SR (sorting race),
+DS-BT (balanced trees), DS-HM (hash map), Dist-Raft (Raft consensus),
+Math-Lorenz (Lorenz system), Math-FFT (Fourier transform), Math-Eig (eigendecomposition), Math-MC (Monte Carlo estimation),
+ML-GD (gradient descent), ML-KM (k-means clustering), ML-NNV (neural network visualization),
+Phys-CFD (fluid simulation), Phys-Orbit (orbital dynamics), Phys-Opt (optics lab), Phys-Therm (thermodynamics),
+Sys-Sched (CPU scheduling), Sys-VM (virtual memory).
+}
+\label{tab:task_breakdown}
+\end{table*}

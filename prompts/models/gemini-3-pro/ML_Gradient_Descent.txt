@@ -1,0 +1,67 @@
+**Project:** Gradient Descent Explorer (Gold Standard)
+**Role:** Senior Creative Technologist.
+**Objective:** Build a high-complexity, single-file React+TS teaching dashboard that visualizes Gradient Descent on 2D surfaces, Learning Rates, and Momentum.
+
+**Global UX Spec:**
+- Layout: Landing Page (Hero) -> Dashboard (Sidebar + Main + Inspector).
+- Theme: Scientific Dark Mode (Data Science aesthetics).
+- Navigation: Function Selector (Bowl, Saddle, Rastrigin).
+- Inspector: "Hyperparameters" and "Loss Log".
+
+**Module Plan (Landing + 5 Modules):**
+1. **Module 0: Hero / The Descent**
+   - Visual: Hikers walking down a foggy mountain in 3D wireframe.
+   - Text: "Learning is just sliding downhill... carefully."
+
+2. **Module 1: The Loss Landscape**
+   - Concept: Error Surface.
+   - Visualization: Top-down heatmap (contour plot) of a function $f(x, y)$.
+   - Interactive: Hover to see Gradient Vectors pointing "Uphill" (we want to go opposite).
+
+3. **Module 2: Steps & Learning Rate**
+   - Concept: Overshooting.
+   - Controls: Learning Rate slider.
+   - Simulation: Step-by-step descent.
+   - Visual: Small steps = slow convergence. Large steps = zigzag/divergence.
+
+4. **Module 3: Local Minima vs Global**
+   - Concept: Getting stuck.
+   - Visualization: Non-convex function (Rastrigin).
+   - Interactive: Click to set "Start Point".
+   - Observation: See how starting points determine the fate.
+
+5. **Module 4: Optimizers (Momentum / Adam)**
+   - Concept: Ball with mass.
+   - Simulation: Compare SGD (Red dot) vs Momentum (Blue dot).
+   - Visual: Momentum ball carries speed through flat regions and dampens zigzags.
+
+6. **Module 5: The "Blind Climber" Challenge**
+   - Task: "Find the Min."
+   - Goal: You are blind (black screen). You only see the "Slope" at your feet. Navigate to the lowest point.
+   - Scoring: Final Loss value.
+
+**Scoring & Gamification:**
+- **Optimizer**: Earned by tuning LR for fastest convergence.
+- **Explorer**: Found the Global Min in Rastrigin.
+
+**Implementation Notes:**
+- **Math**: Compute derivatives numerically or analytically for preset functions.
+- **Canvas**: Essential for the Contour plot and path drawing.
+
+**Acceptance Checklist:**
+- [ ] Landing page.
+- [ ] Contour Plot viz.
+- [ ] Learning Rate interaction.
+- [ ] Momentum visualization.
+- [ ] Blind Descent game.
+- [ ] Single file `src/App.tsx`.
+
+**Codegen Output Requirements:**
+- Return ONLY one file's code: `src/App.tsx`
+- Must include: `export default function App() { ... }`
+- No markdown fences in the final code output
+- If any optional runtime deps are used, list them explicitly at the end of the prompt under: `Runtime deps: ...`
+
+
+
+

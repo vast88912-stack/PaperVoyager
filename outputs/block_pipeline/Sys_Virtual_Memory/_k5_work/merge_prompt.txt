@@ -1,0 +1,2599 @@
+You are merging multiple React component blocks into one monolithic App.tsx.
+Return ONLY valid TSX code — no markdown fences, no explanations.
+The merged file must:
+- Have one unified imports section at the top
+- Have one root App() default export function
+- Deduplicate all state and helper functions
+- Render all blocks in a sidebar-navigated layout (similar to the original prompt's design)
+- Use Tailwind CSS for styling
+- Be fully self-contained in a single file
+
+
+---
+ORIGINAL APP SPECIFICATION:
+Project: Virtual Memory Explorer (ChatGPT Edition)
+Role: OS visualization engineer.
+Objective: Teach paging, TLB, and replacement policies.
+Design: clean neutral palette; panels for virtual->physical mapping.
+Features: process generator; page table view; TLB hit/miss counters; run simulations for FIFO, LRU, Clock; visualization of page faults over time; interactive step-through of address translation.
+Output: only src/App.tsx; default export; runtime deps noted if any.
+
+
+
+
+---
+You have 6 block implementations to merge.
+Each block is a standalone React component that implements one module.
+Your task: combine them into a single polished App.tsx.
+
+Design requirements:
+- Left sidebar with navigation tabs for each module
+- Main content area that shows the active module
+- Unified dark theme (slate-950 background, slate-100 text)
+- Keep all interactive features from each block intact
+- Merge duplicate imports and state declarations
+
+=== BLOCK 1: Process Generator ===
+Description: process generator
+
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { 
+  Play, 
+  Pause, 
+  Plus, 
+  Trash2, 
+  Activity, 
+  Cpu, 
+  Settings2, 
+  Database,
+  FastForward,
+  RotateCcw
+} from 'lucide-react';
+
+// --- Types ---
+type AccessPattern = 'Sequential' | 'Random' | 'Locality';
+
+interface Process {
+  id: string;
+  name: string;
+  size: number; // Total virtual pages
+  pattern: AccessPattern;
+  color: string;
+  status: 'Idle' | 'Running' | 'Paused';
+  currentSeq: number;
+  hotZoneStart: number;
+  hotZoneSize: number;
+}
+
+interface MemoryAccess {
+  id: string;
+  processId: string;
+  processName: string;
+  processColor: string;
+  virtualPage: number;
+  timestamp: number;
+}
+
+// --- Constants & Helpers ---
+const COLORS = [
+  'bg-slate-700', 'bg-zinc-600', 'bg-stone-600', 'bg-neutral-700', 
+  'bg-gray-700', 'bg-slate-500', 'bg-zinc-500', 'bg-stone-500'
+];
+
+const generateId = () => Math.random().toString(36).substr(2, 9);
+
+export default function App() {
+  // --- State ---
+  const [processes, setProcesses] = useState<Process[]>([]);
+  const [traces, setTraces] = useState<MemoryAccess[]>([]);
+  const [isGlobalRunning, setIsGlobalRunning] = useState(false);
+  const [simulationSpeed, setSimulationSpeed] = useState(1000); // ms per tick
+
+  // Form State
+  const [formName, setFormName] = useState('');
+  const [formSize, setFormSize] = useState<number>(16);
+  const [formPattern, setFormPattern] = useState<AccessPattern>('Locality');
+
+  const traceContainerRef = useRef<HTMLDivElement>(null);
+
+  // --- Logic ---
+  const handleAddProcess = (e: React.FormEvent) => {
+    e.preventDefault();
+    const newProcess: Process = {
+      id: generateId(),
+      name: formName || `Process ${processes.length + 1}`,
+      size: formSize,
+      pattern: formPattern,
+      color: COLORS[processes.length % COLORS.length],
+      status: 'Idle',
+      currentSeq: 0,
+      hotZoneStart: Math.floor(Math.random() * (formSize * 0.8)),
+      hotZoneSize: Math.max(1, Math.floor(formSize * 0.2)),
+    };
+    setProcesses([...processes, newProcess]);
+    setFormName('');
+  };
+
+  const handleRemoveProcess = (id: string) => {
+    setProcesses(processes.filter(p => p.id !== id));
+    setTraces(traces.filter(t => t.processId !== id));
+  };
+
+  const toggleProcessStatus = (id: string) => {
+    setProcesses(processes.map(p => {
+      if (p.id === id) {
+        const newStatus = p.status === 'Running' ? 'Paused' : 'Running';
+        return { ...p, status: newStatus };
+      }
+      return p;
+    }));
+  };
+
+  const generateNextAccess = useCallback((process: Process): { access: MemoryAccess, updatedProcess: Process } => {
+    let targetPage = 0;
+    let nextSeq = process.currentSeq;
+
+    switch (process.pattern) {
+      case 'Sequential':
+        targetPage = process.currentSeq;
+        nextSeq = (process.currentSeq + 1) % process.size;
+        break;
+      case 'Random':
+        targetPage = Math.floor(Math.random() * process.size);
+        break;
+      case 'Locality':
+        // 80% chance to hit the 20% hot zone
+        const isHot = Math.random() < 0.8;
+        if (isHot) {
+          targetPage = process.hotZoneStart + Math.floor(Math.random() * process.hotZoneSize);
+        } else {
+          targetPage = Math.floor(Math.random() * process.size);
+        }
+        break;
+    }
+
+    const access: MemoryAccess = {
+      id: generateId(),
+      processId: process.id,
+      processName: process.name,
+      processColor: process.color,
+      virtualPage: targetPage,
+      timestamp: Date.now(),
+    };
+
+    return { access, updatedProcess: { ...process, currentSeq: nextSeq } };
+  }, []);
+
+  // Simulation Loop
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    
+    if (isGlobalRunning) {
+      interval = setInterval(() => {
+        setProcesses(currentProcesses => {
+          const runningProcesses = currentProcesses.filter(p => p.status === 'Running');
+          if (runningProcesses.length === 0) return currentProcesses;
+
+          // Pick a random running process to generate an access for (simulating CPU scheduler)
+          const selectedProcess = runningProcesses[Math.floor(Math.random() * runningProcesses.length)];
+          
+          const { access, updatedProcess } = generateNextAccess(selectedProcess);
+          
+          setTraces(prev => {
+            const newTraces = [...prev, access];
+            // Keep only last 50 traces to prevent memory bloat in UI
+            if (newTraces.length > 50) return newTraces.slice(newTraces.length - 50);
+            return newTraces;
+          });
+
+          return currentProcesses.map(p => p.id === updatedProcess.id ? updatedProcess : p);
+        });
+      }, simulationSpeed);
+    }
+
+    return () => clearInterval(interval);
+  }, [isGlobalRunning, simulationSpeed, generateNextAccess]);
+
+  // Auto-scroll traces
+  useEffect(() => {
+    if (traceContainerRef.current) {
+      traceContainerRef.current.scrollTop = traceContainerRef.current.scrollHeight;
+    }
+  }, [traces]);
+
+  // --- Render ---
+  return (
+    <div className="min-h-screen bg-slate-50 text-slate-800 font-sans p-6 flex flex-col gap-6">
+      
+      {/* Header */}
+      <header className="flex items-center justify-between bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-slate-100 rounded-lg">
+            <Cpu className="w-6 h-6 text-slate-700" />
+          </div>
+          <div>
+            <h1 className="text-xl font-semibold text-slate-900">Process Generator</h1>
+            <p className="text-sm text-slate-500">Virtual Memory Explorer Module</p>
+          </div>
+        </div>
+        
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 text-sm text-slate-600 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200">
+            <Settings2 className="w-4 h-4" />
+            <span>Speed:</span>
+            <select 
+              value={simulationSpeed} 
+              onChange={(e) => setSimulationSpeed(Number(e.target.value))}
+              className="bg-transparent font-medium focus:outline-none"
+            >
+              <option value={2000}>Slow</option>
+              <option value={1000}>Normal</option>
+              <option value={250}>Fast</option>
+              <option value={50}>Turbo</option>
+            </select>
+          </div>
+          <button
+            onClick={() => setIsGlobalRunning(!isGlobalRunning)}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
+              isGlobalRunning 
+                ? 'bg-amber-100 text-amber-800 hover:bg-amber-200 border border-amber-200' 
+                : 'bg-slate-800 text-white hover:bg-slate-700'
+            }`}
+          >
+            {isGlobalRunning ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+            {isGlobalRunning ? 'Pause Simulation' : 'Start Simulation'}
+          </button>
+        </div>
+      </header>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1">
+        
+        {/* Left Column: Controls & Creation */}
+        <div className="flex flex-col gap-6">
+          
+          {/* Create Process Form */}
+          <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+            <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+              <Plus className="w-5 h-5 text-slate-500" />
+              New Process
+            </h2>
+            <form onSubmit={handleAddProcess} className="flex flex-col gap-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-600 mb-1">Process Name</label>
+                <input 
+                  type="text" 
+                  placeholder="e.g., Database Daemon"
+                  value={formName}
+                  onChange={(e) => setFormName(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-400 transition-all"
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-600 mb-1">Virtual Pages</label>
+                  <input 
+                    type="number" 
+                    min="4" 
+                    max="128"
+                    value={formSize}
+                    onChange={(e) => setFormSize(Number(e.target.value))}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-400 transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-600 mb-1">Access Pattern</label>
+                  <select 
+                    value={formPattern}
+                    onChange={(e) => setFormPattern(e.target.value as AccessPattern)}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-400 transition-all"
+                  >
+                    <option value="Locality">Locality (80/20)</option>
+                    <option value="Sequential">Sequential</option>
+                    <option value="Random">Random</option>
+                  </select>
+                </div>
+              </div>
+
+              <button 
+                type="submit"
+                className="mt-2 w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 font-medium rounded-lg border border-slate-200 transition-colors flex items-center justify-center gap-2"
+              >
+                <Plus className="w-4 h-4" />
+                Generate Process
+              </button>
+            </form>
+          </div>
+
+          {/* Trace Stream Visualization */}
+          <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex-1 flex flex-col">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold flex items-center gap-2">
+                <Activity className="w-5 h-5 text-slate-500" />
+                Memory Access Stream
+              </h2>
+              <button 
+                onClick={() => setTraces([])}
+                className="text-xs text-slate-500 hover:text-slate-800 flex items-center gap-1"
+              >
+                <RotateCcw className="w-3 h-3" /> Clear
+              </button>
+            </div>
+            
+            <div 
+              ref={traceContainerRef}
+              className="flex-1 bg-slate-900 rounded-lg p-4 overflow-y-auto font-mono text-sm h-64 border border-slate-800 shadow-inner"
+            >
+              {traces.length === 0 ? (
+                <div className="h-full flex items-center justify-center text-slate-600 italic">
+                  Waiting for memory requests...
+                </div>
+              ) : (
+                <div className="flex flex-col gap-1">
+                  {traces.map((trace, idx) => (
+                    <div key={trace.id} className="flex items-center gap-3 animate-in fade-in slide-in-from-bottom-2 duration-200">
+                      <span className="text-slate-500 text-xs w-16">
+                        +{idx}
+                      </span>
+                      <span className={`w-2 h-2 rounded-full ${trace.processColor}`}></span>
+                      <span className="text-slate-300 w-24 truncate">{trace.processName}</span>
+                      <span className="text-slate-400">requests</span>
+                      <span className="text-emerald-400 font-semibold">
+                        VP_{trace.virtualPage.toString().padStart(3, '0')}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+        </div>
+
+        {/* Right Column: Active Processes */}
+        <div className="lg:col-span-2 bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-lg font-semibold flex items-center gap-2">
+              <Database className="w-5 h-5 text-slate-500" />
+              Active Processes ({processes.length})
+            </h2>
+            {processes.length > 0 && (
+              <div className="flex gap-2">
+                <button 
+                  onClick={() => setProcesses(processes.map(p => ({ ...p, status: 'Running' })))}
+                  className="text-xs px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md font-medium transition-colors"
+                >
+                  Run All
+                </button>
+                <button 
+                  onClick={() => setProcesses(processes.map(p => ({ ...p, status: 'Paused' })))}
+                  className="text-xs px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md font-medium transition-colors"
+                >
+                  Pause All
+                </button>
+              </div>
+            )}
+          </div>
+
+          {processes.length === 0 ? (
+            <div className="flex-1 flex flex-col items-center justify-center text-slate-400 border-2 border-dashed border-slate-100 rounded-xl p-8">
+              <Database className="w-12 h-12 mb-3 text-slate-300" />
+              <p>No processes generated yet.</p>
+              <p className="text-sm">Use the form on the left to create one.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 overflow-y-auto pr-2 pb-4">
+              {processes.map(process => (
+                <div key={process.id} className="border border-slate-200 rounded-xl p-4 flex flex-col gap-4 hover:border-slate-300 transition-colors bg-slate-50/50">
+                  
+                  {/* Process Header */}
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-3 h-10 rounded-full ${process.color}`}></div>
+                      <div>
+                        <h3 className="font-semibold text-slate-800">{process.name}</h3>
+                        <div className="flex items-center gap-2 text-xs text-slate-500 mt-1">
+                          <span className="px-2 py-0.5 bg-slate-200 rounded-md font-medium">{process.pattern}</span>
+                          <span>•</span>
+                          <span>{process.size} Pages</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button 
+                        onClick={() => toggleProcessStatus(process.id)}
+                        className={`p-1.5 rounded-md transition-colors ${
+                          process.status === 'Running' 
+                            ? 'bg-amber-100 text-amber-700 hover:bg-amber-200' 
+                            : 'bg-slate-200 text-slate-700 hover:bg-slate-300'
+                        }`}
+                        title={process.status === 'Running' ? 'Pause' : 'Run'}
+                      >
+                        {process.status === 'Running' ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+                      </button>
+                      <button 
+                        onClick={() => handleRemoveProcess(process.id)}
+                        className="p-1.5 bg-red-50 text-red-600 hover:bg-red-100 rounded-md transition-colors"
+                        title="Terminate Process"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Virtual Address Space Visualization */}
+                  <div>
+                    <div className="text-xs font-medium text-slate-500 mb-2 flex justify-between">
+                      <span>Virtual Address Space</span>
+                      {process.pattern === 'Locality' && (
+                        <span className="text-rose-500/80">Hot Zone: VP_{process.hotZoneStart} - VP_{process.hotZoneStart + process.hotZoneSize - 1}</span>
+                      )}
+                    </div>
+                    <div className="flex flex-wrap gap-1">
+                      {Array.from({ length: process.size }).map((_, i) => {
+                        // Determine if this page was recently accessed
+                        const recentAccess = traces.slice(-5).find(t => t.processId === process.id && t.virtualPage === i);
+                        const isHotZone = process.pattern === 'Locality' && i >= process.hotZoneStart && i < process.hotZoneStart + process.hotZoneSize;
+                        
+                        return (
+                          <div 
+                            key={i}
+                            title={`Virtual Page ${i}`}
+                            className={`w-4 h-4 rounded-sm border text-[8px] flex items-center justify-center transition-all duration-300 ${
+                              recentAccess 
+                                ? `${process.color} border-transparent text-white scale-125 z-10 shadow-sm` 
+                                : isHotZone 
+                                  ? 'bg-rose-50 border-rose-200 text-rose-300' 
+                                  : 'bg-white border-slate-200 text-slate-300'
+                            }`}
+                          >
+                            {/* Optional: show page number if size is small enough, else keep blank */}
+                            {process.size <= 64 ? i : ''}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Status Footer */}
+                  <div className="mt-auto pt-3 border-t border-slate-200 flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-2">
+                      <span className="relative flex h-2 w-2">
+                        {process.status === 'Running' && isGlobalRunning && (
+                          <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${process.color}`}></span>
+                        )}
+                        <span className={`relative inline-flex rounded-full h-2 w-2 ${
+                          process.status === 'Running' ? process.color : 'bg-slate-300'
+                        }`}></span>
+                      </span>
+                      <span className={process.status === 'Running' ? 'text-slate-700 font-medium' : 'text-slate-400'}>
+                        {process.status}
+                      </span>
+                    </div>
+                    
+                    {process.status === 'Running' && !isGlobalRunning && (
+                      <span className="text-amber-600 italic flex items-center gap-1">
+                        Global simulation paused
+                      </span>
+                    )}
+                  </div>
+
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+      </div>
+    </div>
+  );
+}
+
+
+=== BLOCK 2: Page Table View ===
+Description: page table view
+
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+
+// --- Constants & Types ---
+const NUM_PAGES = 16;   // 4-bit VPN
+const NUM_FRAMES = 8;   // 3-bit PFN
+const PAGE_SIZE = 16;   // 4-bit Offset
+const TLB_SIZE = 4;
+
+type PageTableEntry = {
+  vpn: number;
+  pfn: number | null;
+  valid: boolean;
+  dirty: boolean;
+  ref: boolean;
+};
+
+type TLBEntry = {
+  vpn: number;
+  pfn: number;
+  lastUsed: number; // For LRU TLB replacement
+};
+
+type LogEntry = {
+  id: number;
+  message: string;
+  type: 'info' | 'success' | 'warning' | 'error';
+};
+
+// --- Helper Functions ---
+const toHex = (num: number, padding = 2) => `0x${num.toString(16).toUpperCase().padStart(padding, '0')}`;
+const toBin = (num: number, padding = 8) => num.toString(2).padStart(padding, '0');
+
+export default function App() {
+  // --- State ---
+  const [pageTable, setPageTable] = useState<PageTableEntry[]>([]);
+  const [tlb, setTlb] = useState<TLBEntry[]>([]);
+  const [fifoQueue, setFifoQueue] = useState<number[]>([]); // Tracks VPNs in physical memory for FIFO
+  const [freeFrames, setFreeFrames] = useState<number[]>([]);
+  
+  const [stats, setStats] = useState({ accesses: 0, tlbHits: 0, tlbMisses: 0, pageFaults: 0 });
+  const [logs, setLogs] = useState<LogEntry[]>([]);
+  const logIdCounter = useRef(0);
+  const timeCounter = useRef(0);
+
+  const [inputAddress, setInputAddress] = useState<string>('');
+  const [activeVPN, setActiveVPN] = useState<number | null>(null);
+  const [activeTLBIndex, setActiveTLBIndex] = useState<number | null>(null);
+  const [translationStep, setTranslationStep] = useState<string>('Idle');
+
+  // --- Initialization ---
+  useEffect(() => {
+    // Initialize Page Table (16 entries)
+    const initialPT: PageTableEntry[] = Array.from({ length: NUM_PAGES }, (_, i) => ({
+      vpn: i,
+      pfn: null,
+      valid: false,
+      dirty: false,
+      ref: false,
+    }));
+
+    // Pre-allocate some frames to make it interesting
+    const initialFreeFrames = Array.from({ length: NUM_FRAMES }, (_, i) => i);
+    const initialFifo: number[] = [];
+    
+    // Randomly load 4 pages into memory
+    for (let i = 0; i < 4; i++) {
+      const vpn = Math.floor(Math.random() * NUM_PAGES);
+      if (!initialPT[vpn].valid) {
+        const pfn = initialFreeFrames.shift()!;
+        initialPT[vpn].pfn = pfn;
+        initialPT[vpn].valid = true;
+        initialFifo.push(vpn);
+      }
+    }
+
+    setPageTable(initialPT);
+    setFreeFrames(initialFreeFrames);
+    setFifoQueue(initialFifo);
+    addLog('System initialized. 4 pages pre-loaded.', 'info');
+  }, []);
+
+  // --- Core Logic ---
+  const addLog = (message: string, type: LogEntry['type'] = 'info') => {
+    setLogs(prev => [{ id: logIdCounter.current++, message, type }, ...prev].slice(0, 50));
+  };
+
+  const handleAccess = useCallback((virtualAddressStr: string) => {
+    let va = parseInt(virtualAddressStr, 16);
+    if (isNaN(va) || va < 0 || va > 255) {
+      addLog(`Invalid address: ${virtualAddressStr}. Use 0x00 - 0xFF.`, 'error');
+      return;
+    }
+
+    timeCounter.current++;
+    const vpn = Math.floor(va / PAGE_SIZE);
+    const offset = va % PAGE_SIZE;
+    
+    setActiveVPN(vpn);
+    setStats(s => ({ ...s, accesses: s.accesses + 1 }));
+    addLog(`Accessing VA: ${toHex(va)} (VPN: ${toHex(vpn, 1)}, Offset: ${toHex(offset, 1)})`, 'info');
+
+    // 1. Check TLB
+    const tlbIndex = tlb.findIndex(entry => entry.vpn === vpn);
+    if (tlbIndex !== -1) {
+      // TLB Hit
+      setActiveTLBIndex(tlbIndex);
+      setStats(s => ({ ...s, tlbHits: s.tlbHits + 1 }));
+      addLog(`TLB Hit! VPN ${toHex(vpn, 1)} -> PFN ${toHex(tlb[tlbIndex].pfn, 1)}`, 'success');
+      
+      // Update TLB LRU
+      const newTlb = [...tlb];
+      newTlb[tlbIndex].lastUsed = timeCounter.current;
+      setTlb(newTlb);
+      
+      setTranslationStep(`TLB Hit. Physical Address: ${toHex(tlb[tlbIndex].pfn * PAGE_SIZE + offset)}`);
+      setTimeout(() => { setActiveVPN(null); setActiveTLBIndex(null); }, 1500);
+      return;
+    }
+
+    // TLB Miss
+    setStats(s => ({ ...s, tlbMisses: s.tlbMisses + 1 }));
+    addLog(`TLB Miss for VPN ${toHex(vpn, 1)}. Checking Page Table...`, 'warning');
+
+    // 2. Check Page Table
+    setPageTable(prevPT => {
+      const newPT = [...prevPT];
+      const entry = { ...newPT[vpn] };
+      let currentFreeFrames = [...freeFrames];
+      let currentFifo = [...fifoQueue];
+      let resolvedPfn = entry.pfn;
+
+      if (entry.valid && resolvedPfn !== null) {
+        // Page Table Hit
+        addLog(`Page Table Hit! VPN ${toHex(vpn, 1)} is in frame ${toHex(resolvedPfn, 1)}`, 'success');
+        entry.ref = true;
+      } else {
+        // Page Fault
+        setStats(s => ({ ...s, pageFaults: s.pageFaults + 1 }));
+        addLog(`PAGE FAULT! VPN ${toHex(vpn, 1)} not in memory.`, 'error');
+
+        if (currentFreeFrames.length > 0) {
+          // Allocate free frame
+          resolvedPfn = currentFreeFrames.shift()!;
+          addLog(`Allocated free frame ${toHex(resolvedPfn, 1)} to VPN ${toHex(vpn, 1)}`, 'info');
+        } else {
+          // Evict using FIFO
+          const evictedVpn = currentFifo.shift()!;
+          resolvedPfn = newPT[evictedVpn].pfn!;
+          newPT[evictedVpn] = { ...newPT[evictedVpn], valid: false, pfn: null, dirty: false, ref: false };
+          addLog(`Memory full. Evicted VPN ${toHex(evictedVpn, 1)} (FIFO) from frame ${toHex(resolvedPfn, 1)}`, 'warning');
+        }
+
+        entry.pfn = resolvedPfn;
+        entry.valid = true;
+        entry.ref = true;
+        currentFifo.push(vpn);
+        
+        setFreeFrames(currentFreeFrames);
+        setFifoQueue(currentFifo);
+      }
+
+      newPT[vpn] = entry;
+
+      // 3. Update TLB
+      setTlb(prevTlb => {
+        const newTlb = [...prevTlb];
+        if (newTlb.length < TLB_SIZE) {
+          newTlb.push({ vpn, pfn: resolvedPfn!, lastUsed: timeCounter.current });
+        } else {
+          // LRU Replacement for TLB
+          newTlb.sort((a, b) => a.lastUsed - b.lastUsed);
+          newTlb[0] = { vpn, pfn: resolvedPfn!, lastUsed: timeCounter.current };
+        }
+        return newTlb;
+      });
+
+      setTranslationStep(`Translated via PT. Physical Address: ${toHex(resolvedPfn! * PAGE_SIZE + offset)}`);
+      return newPT;
+    });
+
+    setTimeout(() => { setActiveVPN(null); setActiveTLBIndex(null); }, 1500);
+  }, [tlb, freeFrames, fifoQueue]);
+
+  const generateRandomAccess = () => {
+    const randomVA = Math.floor(Math.random() * 256);
+    setInputAddress(toHex(randomVA));
+    handleAccess(randomVA.toString(16));
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-50 text-slate-800 font-sans p-6 flex flex-col gap-6">
+      
+      {/* Header */}
+      <header className="flex flex-col md:flex-row justify-between items-start md:items-center bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Virtual Memory Explorer</h1>
+          <p className="text-sm text-slate-500 mt-1">Interactive Page Table & Address Translation Visualization</p>
+        </div>
+        <div className="flex gap-4 mt-4 md:mt-0">
+          <StatBox label="Accesses" value={stats.accesses} />
+          <StatBox label="TLB Hits" value={stats.tlbHits} highlight="text-emerald-600" />
+          <StatBox label="TLB Misses" value={stats.tlbMisses} highlight="text-amber-600" />
+          <StatBox label="Page Faults" value={stats.pageFaults} highlight="text-rose-600" />
+        </div>
+      </header>
+
+      <div className="flex flex-col lg:flex-row gap-6 flex-1">
+        
+        {/* Left Column: Controls & Translation Visualizer */}
+        <div className="w-full lg:w-1/3 flex flex-col gap-6">
+          
+          {/* Controls */}
+          <section className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+            <h2 className="text-lg font-semibold mb-4 border-b border-slate-100 pb-2">Memory Access</h2>
+            <div className="flex gap-2 mb-4">
+              <input 
+                type="text" 
+                value={inputAddress}
+                onChange={(e) => setInputAddress(e.target.value)}
+                placeholder="e.g. 0x3A or 58"
+                className="flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono text-sm"
+                onKeyDown={(e) => e.key === 'Enter' && handleAccess(inputAddress)}
+              />
+              <button 
+                onClick={() => handleAccess(inputAddress)}
+                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors shadow-sm"
+              >
+                Access
+              </button>
+            </div>
+            <button 
+              onClick={generateRandomAccess}
+              className="w-full px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-medium transition-colors border border-slate-200"
+            >
+              Generate Random Access
+            </button>
+          </section>
+
+          {/* Translation Visualizer */}
+          <section className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex-1">
+            <h2 className="text-lg font-semibold mb-4 border-b border-slate-100 pb-2">Address Translation</h2>
+            
+            <div className="flex flex-col items-center justify-center h-full gap-6 py-4">
+              {activeVPN !== null ? (
+                <>
+                  <div className="text-center">
+                    <div className="text-xs text-slate-500 uppercase tracking-wider mb-1">Virtual Address</div>
+                    <div className="flex border-2 border-slate-800 rounded-md overflow-hidden font-mono text-lg shadow-sm">
+                      <div className="bg-indigo-100 text-indigo-900 px-4 py-2 border-r-2 border-slate-800 flex flex-col items-center">
+                        <span>{toBin(activeVPN, 4)}</span>
+                        <span className="text-[10px] text-indigo-600 uppercase mt-1">VPN ({toHex(activeVPN, 1)})</span>
+                      </div>
+                      <div className="bg-slate-100 text-slate-900 px-4 py-2 flex flex-col items-center">
+                        <span>{toBin(parseInt(inputAddress, 16) % PAGE_SIZE, 4)}</span>
+                        <span className="text-[10px] text-slate-500 uppercase mt-1">Offset</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="text-slate-400">
+                    <svg className="w-6 h-6 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" /></svg>
+                  </div>
+
+                  <div className="text-center bg-slate-50 p-4 rounded-lg border border-slate-200 w-full">
+                    <div className="text-sm font-medium text-slate-700 mb-2">Status</div>
+                    <div className="text-indigo-600 font-semibold">{translationStep}</div>
+                  </div>
+                </>
+              ) : (
+                <div className="text-slate-400 text-sm text-center italic">
+                  Enter a virtual address or generate a random access to see translation steps.
+                </div>
+              )}
+            </div>
+          </section>
+        </div>
+
+        {/* Center Column: The Page Table */}
+        <div className="w-full lg:w-1/3 flex flex-col">
+          <section className="bg-white rounded-xl shadow-sm border border-slate-200 flex-1 flex flex-col overflow-hidden">
+            <div className="p-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
+              <h2 className="text-lg font-semibold text-slate-800">Page Table</h2>
+              <span className="text-xs font-medium bg-slate-200 text-slate-600 px-2 py-1 rounded-full">16 Entries</span>
+            </div>
+            
+            <div className="flex-1 overflow-auto p-4">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="text-xs uppercase tracking-wider text-slate-500 border-b-2 border-slate-200">
+                    <th className="pb-2 pl-2">VPN</th>
+                    <th className="pb-2 text-center">Valid</th>
+                    <th className="pb-2 text-center">PFN</th>
+                    <th className="pb-2 text-center">Dirty</th>
+                    <th className="pb-2 text-center">Ref</th>
+                  </tr>
+                </thead>
+                <tbody className="font-mono text-sm">
+                  {pageTable.map((entry, idx) => {
+                    const isActive = activeVPN === idx;
+                    return (
+                      <tr 
+                        key={idx} 
+                        className={`
+                          border-b border-slate-100 transition-colors duration-300
+                          ${isActive ? 'bg-indigo-50 border-indigo-200 shadow-inner' : 'hover:bg-slate-50'}
+                        `}
+                      >
+                        <td className={`py-2 pl-2 font-semibold ${isActive ? 'text-indigo-700' : 'text-slate-700'}`}>
+                          {toHex(entry.vpn, 1)}
+                        </td>
+                        <td className="py-2 text-center">
+                          {entry.valid ? (
+                            <span className="inline-block w-3 h-3 rounded-full bg-emerald-500 shadow-sm"></span>
+                          ) : (
+                            <span className="inline-block w-3 h-3 rounded-full bg-slate-200 border border-slate-300"></span>
+                          )}
+                        </td>
+                        <td className="py-2 text-center">
+                          {entry.valid && entry.pfn !== null ? (
+                            <span className="bg-slate-100 text-slate-800 px-2 py-1 rounded border border-slate-200">
+                              {toHex(entry.pfn, 1)}
+                            </span>
+                          ) : (
+                            <span className="text-slate-300">-</span>
+                          )}
+                        </td>
+                        <td className="py-2 text-center text-slate-400">{entry.dirty ? '1' : '0'}</td>
+                        <td className="py-2 text-center text-slate-400">{entry.ref ? '1' : '0'}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+
+        {/* Right Column: TLB & Logs */}
+        <div className="w-full lg:w-1/3 flex flex-col gap-6">
+          
+          {/* TLB */}
+          <section className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+            <div className="flex justify-between items-center mb-4 border-b border-slate-100 pb-2">
+              <h2 className="text-lg font-semibold">TLB Cache</h2>
+              <span className="text-xs font-medium bg-slate-100 text-slate-500 px-2 py-1 rounded-full">LRU Policy</span>
+            </div>
+            
+            {tlb.length === 0 ? (
+              <div className="text-sm text-slate-400 italic text-center py-4">TLB is empty</div>
+            ) : (
+              <div className="grid grid-cols-2 gap-3">
+                {tlb.map((entry, idx) => (
+                  <div 
+                    key={idx} 
+                    className={`
+                      p-3 rounded-lg border font-mono text-sm flex justify-between items-center transition-colors
+                      ${activeTLBIndex === idx ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-slate-50 border-slate-200 text-slate-700'}
+                    `}
+                  >
+                    <div className="flex flex-col">
+                      <span className="text-[10px] text-slate-500 uppercase">VPN</span>
+                      <span className="font-bold">{toHex(entry.vpn, 1)}</span>
+                    </div>
+                    <div className="text-slate-300">→</div>
+                    <div className="flex flex-col items-end">
+                      <span className="text-[10px] text-slate-500 uppercase">PFN</span>
+                      <span className="font-bold">{toHex(entry.pfn, 1)}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+
+          {/* Event Log */}
+          <section className="bg-white rounded-xl shadow-sm border border-slate-200 flex-1 flex flex-col overflow-hidden">
+            <div className="p-4 border-b border-slate-100">
+              <h2 className="text-lg font-semibold">Activity Log</h2>
+            </div>
+            <div className="flex-1 overflow-auto p-4 bg-slate-900 text-slate-300 font-mono text-xs space-y-2">
+              {logs.map(log => (
+                <div key={log.id} className="flex gap-2 border-b border-slate-800 pb-1">
+                  <span className="text-slate-500 shrink-0">[{log.id.toString().padStart(4, '0')}]</span>
+                  <span className={`
+                    ${log.type === 'error' ? 'text-rose-400' : ''}
+                    ${log.type === 'warning' ? 'text-amber-400' : ''}
+                    ${log.type === 'success' ? 'text-emerald-400' : ''}
+                    ${log.type === 'info' ? 'text-blue-300' : ''}
+                  `}>
+                    {log.message}
+                  </span>
+                </div>
+              ))}
+              {logs.length === 0 && <div className="text-slate-600 italic">Waiting for activity...</div>}
+            </div>
+          </section>
+        </div>
+
+      </div>
+    </div>
+  );
+}
+
+// --- Subcomponents ---
+
+function StatBox({ label, value, highlight = "text-slate-900" }: { label: string, value: number, highlight?: string }) {
+  return (
+    <div className="flex flex-col items-center bg-slate-50 px-4 py-2 rounded-lg border border-slate-100 min-w-[80px]">
+      <span className="text-[10px] uppercase tracking-wider text-slate-500 font-semibold">{label}</span>
+      <span className={`text-xl font-bold font-mono ${highlight}`}>{value}</span>
+    </div>
+  );
+}
+
+
+=== BLOCK 3: Tlb Hit/Miss Counters ===
+Description: TLB hit/miss counters
+
+import React, { useState, useEffect, useRef } from 'react';
+
+// Runtime Dependencies: None (using inline SVGs for icons to ensure standalone execution)
+
+interface TLBEntry {
+  vpn: number; // Virtual Page Number
+  pfn: number; // Physical Frame Number
+  lastAccessed: number; // For LRU replacement
+}
+
+interface AccessLog {
+  id: number;
+  vpn: number;
+  isHit: boolean;
+  timestamp: Date;
+}
+
+const TLB_SIZE = 4;
+const TOTAL_PAGES = 8;
+
+export default function App() {
+  const [tlb, setTlb] = useState<TLBEntry[]>([]);
+  const [hits, setHits] = useState(0);
+  const [misses, setMisses] = useState(0);
+  const [accessCount, setAccessCount] = useState(0);
+  const [logs, setLogs] = useState<AccessLog[]>([]);
+  const [autoRun, setAutoRun] = useState(false);
+  
+  const logsEndRef = useRef<HTMLDivElement>(null);
+
+  const hitRate = accessCount === 0 ? 0 : ((hits / accessCount) * 100).toFixed(1);
+  const missRate = accessCount === 0 ? 0 : ((misses / accessCount) * 100).toFixed(1);
+
+  const requestPage = (vpn: number) => {
+    setAccessCount((prev) => prev + 1);
+    const now = Date.now();
+
+    setTlb((prevTlb) => {
+      const existingEntryIndex = prevTlb.findIndex((entry) => entry.vpn === vpn);
+      
+      if (existingEntryIndex !== -1) {
+        // TLB Hit
+        setHits((h) => h + 1);
+        addLog(vpn, true);
+        
+        // Update LRU
+        const newTlb = [...prevTlb];
+        newTlb[existingEntryIndex].lastAccessed = now;
+        return newTlb;
+      } else {
+        // TLB Miss
+        setMisses((m) => m + 1);
+        addLog(vpn, false);
+        
+        const newEntry: TLBEntry = {
+          vpn,
+          pfn: Math.floor(Math.random() * 16), // Mock physical frame
+          lastAccessed: now,
+        };
+
+        if (prevTlb.length < TLB_SIZE) {
+          return [...prevTlb, newEntry];
+        } else {
+          // LRU Replacement
+          const sortedTlb = [...prevTlb].sort((a, b) => a.lastAccessed - b.lastAccessed);
+          sortedTlb[0] = newEntry; // Replace the oldest
+          return sortedTlb;
+        }
+      }
+    });
+  };
+
+  const addLog = (vpn: number, isHit: boolean) => {
+    setLogs((prev) => [
+      ...prev,
+      { id: Date.now() + Math.random(), vpn, isHit, timestamp: new Date() }
+    ].slice(-50)); // Keep last 50 logs
+  };
+
+  const resetSimulation = () => {
+    setTlb([]);
+    setHits(0);
+    setMisses(0);
+    setAccessCount(0);
+    setLogs([]);
+    setAutoRun(false);
+  };
+
+  // Auto-simulation effect
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (autoRun) {
+      interval = setInterval(() => {
+        // Simulate some locality of reference (80% chance to pick a recently used page, 20% random)
+        const useLocality = Math.random() > 0.2 && tlb.length > 0;
+        let nextVpn;
+        if (useLocality) {
+          const randomTlbEntry = tlb[Math.floor(Math.random() * tlb.length)];
+          nextVpn = randomTlbEntry.vpn;
+        } else {
+          nextVpn = Math.floor(Math.random() * TOTAL_PAGES);
+        }
+        requestPage(nextVpn);
+      }, 800);
+    }
+    return () => clearInterval(interval);
+  }, [autoRun, tlb]);
+
+  // Auto-scroll logs
+  useEffect(() => {
+    logsEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [logs]);
+
+  return (
+    <div className="min-h-screen bg-stone-50 text-stone-800 p-6 md:p-10 font-sans selection:bg-stone-200">
+      <div className="max-w-6xl mx-auto space-y-8">
+        
+        {/* Header */}
+        <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-stone-200 pb-6">
+          <div>
+            <h1 className="text-3xl font-light tracking-tight text-stone-900">TLB Performance Monitor</h1>
+            <p className="text-stone-500 mt-1 text-sm">
+              Translation Lookaside Buffer hit/miss counters & LRU replacement visualization.
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setAutoRun(!autoRun)}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
+                autoRun 
+                  ? 'bg-rose-100 text-rose-700 hover:bg-rose-200' 
+                  : 'bg-stone-800 text-stone-50 hover:bg-stone-700'
+              }`}
+            >
+              {autoRun ? (
+                <>
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <rect x="6" y="4" width="4" height="16" />
+                    <rect x="14" y="4" width="4" height="16" />
+                  </svg>
+                  Stop Simulation
+                </>
+              ) : (
+                <>
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <polygon points="5 3 19 12 5 21 5 3" />
+                  </svg>
+                  Auto Run
+                </>
+              )}
+            </button>
+            <button
+              onClick={resetSimulation}
+              className="px-4 py-2 rounded-lg text-sm font-medium bg-white border border-stone-200 text-stone-600 hover:bg-stone-100 transition-colors flex items-center gap-2"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              Reset
+            </button>
+          </div>
+        </header>
+
+        {/* Stats Dashboard */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <StatCard 
+            title="Total Accesses" 
+            value={accessCount} 
+            icon={<svg className="w-5 h-5 text-stone-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>}
+          />
+          <StatCard 
+            title="TLB Hits" 
+            value={hits} 
+            valueColor="text-emerald-600"
+            bgColor="bg-emerald-50"
+            icon={<svg className="w-5 h-5 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
+          />
+          <StatCard 
+            title="TLB Misses" 
+            value={misses} 
+            valueColor="text-rose-600"
+            bgColor="bg-rose-50"
+            icon={<svg className="w-5 h-5 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
+          />
+          <StatCard 
+            title="Hit Rate" 
+            value={`${hitRate}%`} 
+            subtitle={`${missRate}% Miss Rate`}
+            icon={<svg className="w-5 h-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" /><path strokeLinecap="round" strokeLinejoin="round" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" /></svg>}
+          />
+        </div>
+
+        {/* Main Content Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          
+          {/* Left Column: TLB State & Controls */}
+          <div className="lg:col-span-2 space-y-8">
+            
+            {/* Memory Access Controls */}
+            <div className="bg-white p-6 rounded-2xl border border-stone-200 shadow-sm">
+              <h2 className="text-lg font-medium text-stone-800 mb-4 flex items-center gap-2">
+                <svg className="w-5 h-5 text-stone-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
+                </svg>
+                Request Memory Access
+              </h2>
+              <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
+                {Array.from({ length: TOTAL_PAGES }).map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => requestPage(i)}
+                    className="py-3 rounded-xl border border-stone-200 bg-stone-50 hover:bg-stone-100 hover:border-stone-300 transition-all text-stone-700 font-mono text-sm flex flex-col items-center justify-center gap-1 active:scale-95"
+                  >
+                    <span className="text-[10px] text-stone-400 uppercase tracking-wider">VPN</span>
+                    {i}
+                  </button>
+                ))}
+              </div>
+              <p className="text-xs text-stone-400 mt-4 text-center">
+                Click a Virtual Page Number (VPN) to simulate a memory access.
+              </p>
+            </div>
+
+            {/* TLB Visualization */}
+            <div className="bg-white p-6 rounded-2xl border border-stone-200 shadow-sm">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-lg font-medium text-stone-800 flex items-center gap-2">
+                  <svg className="w-5 h-5 text-stone-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
+                  </svg>
+                  Current TLB State
+                </h2>
+                <span className="text-xs font-medium px-2.5 py-1 bg-stone-100 text-stone-500 rounded-full">
+                  Size: {TLB_SIZE} Entries (LRU)
+                </span>
+              </div>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                {Array.from({ length: TLB_SIZE }).map((_, i) => {
+                  const entry = tlb[i];
+                  return (
+                    <div 
+                      key={i} 
+                      className={`relative overflow-hidden rounded-xl border-2 transition-all duration-300 ${
+                        entry 
+                          ? 'border-stone-300 bg-white shadow-sm' 
+                          : 'border-dashed border-stone-200 bg-stone-50/50'
+                      } p-4 flex flex-col items-center justify-center min-h-[120px]`}
+                    >
+                      {entry ? (
+                        <>
+                          <div className="absolute top-2 right-2 flex gap-1">
+                            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                          </div>
+                          <div className="text-center space-y-2 w-full">
+                            <div className="flex justify-between items-center bg-stone-50 px-2 py-1 rounded text-xs font-mono text-stone-500">
+                              <span>VPN</span>
+                              <span className="text-stone-900 font-bold text-base">{entry.vpn}</span>
+                            </div>
+                            <div className="flex justify-between items-center bg-stone-50 px-2 py-1 rounded text-xs font-mono text-stone-500">
+                              <span>PFN</span>
+                              <span className="text-stone-900 font-bold text-base">{entry.pfn}</span>
+                            </div>
+                          </div>
+                        </>
+                      ) : (
+                        <span className="text-stone-400 text-sm font-medium">Empty Slot</span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+          </div>
+
+          {/* Right Column: Access Log */}
+          <div className="bg-white rounded-2xl border border-stone-200 shadow-sm flex flex-col h-[600px]">
+            <div className="p-5 border-b border-stone-100 flex items-center justify-between bg-stone-50/50 rounded-t-2xl">
+              <h2 className="text-lg font-medium text-stone-800 flex items-center gap-2">
+                <svg className="w-5 h-5 text-stone-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                Access History
+              </h2>
+              <span className="text-xs text-stone-400">{logs.length} records</span>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto p-4 space-y-3">
+              {logs.length === 0 ? (
+                <div className="h-full flex flex-col items-center justify-center text-stone-400 space-y-2">
+                  <svg className="w-8 h-8 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <p className="text-sm">No accesses yet</p>
+                </div>
+              ) : (
+                logs.map((log) => (
+                  <div 
+                    key={log.id} 
+                    className={`flex items-center justify-between p-3 rounded-lg border text-sm animate-in fade-in slide-in-from-bottom-2 ${
+                      log.isHit 
+                        ? 'bg-emerald-50/50 border-emerald-100 text-emerald-900' 
+                        : 'bg-rose-50/50 border-rose-100 text-rose-900'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`p-1.5 rounded-md ${log.isHit ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'}`}>
+                        {log.isHit ? (
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                        ) : (
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                        )}
+                      </div>
+                      <span className="font-mono font-medium">VPN {log.vpn}</span>
+                    </div>
+                    <div className="flex flex-col items-end">
+                      <span className={`font-bold ${log.isHit ? 'text-emerald-600' : 'text-rose-600'}`}>
+                        {log.isHit ? 'HIT' : 'MISS'}
+                      </span>
+                      <span className="text-[10px] opacity-60">
+                        {log.timestamp.toLocaleTimeString([], { hour12: false, hour: '2-digit', minute:'2-digit', second:'2-digit', fractionalSecondDigits: 2 })}
+                      </span>
+                    </div>
+                  </div>
+                ))
+              )}
+              <div ref={logsEndRef} />
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Subcomponents
+
+function StatCard({ 
+  title, 
+  value, 
+  subtitle, 
+  icon, 
+  valueColor = "text-stone-900",
+  bgColor = "bg-white"
+}: { 
+  title: string; 
+  value: string | number; 
+  subtitle?: string; 
+  icon: React.ReactNode;
+  valueColor?: string;
+  bgColor?: string;
+}) {
+  return (
+    <div className={`p-5 rounded-2xl border border-stone-200 shadow-sm flex flex-col justify-between ${bgColor}`}>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-sm font-medium text-stone-500">{title}</h3>
+        <div className="p-2 bg-white rounded-lg shadow-sm border border-stone-100">
+          {icon}
+        </div>
+      </div>
+      <div>
+        <div className={`text-3xl font-bold tracking-tight ${valueColor}`}>
+          {value}
+        </div>
+        {subtitle && (
+          <p className="text-xs text-stone-500 mt-1 font-medium">{subtitle}</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+
+=== BLOCK 4: Run Simulations For Fifo ===
+Description: run simulations for FIFO, LRU, Clock
+
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { 
+  Play, 
+  Pause, 
+  StepForward, 
+  RotateCcw, 
+  Activity, 
+  Cpu, 
+  Database, 
+  List, 
+  Clock as ClockIcon, 
+  ArrowRight,
+  Info
+} from 'lucide-react';
+
+// --- Types & Constants ---
+type Algorithm = 'FIFO' | 'LRU' | 'CLOCK';
+
+interface Frame {
+  id: number;
+  page: number | null;
+  loadedAt: number;
+  lastUsed: number;
+  useBit: boolean;
+}
+
+interface StepHistory {
+  step: number;
+  page: number;
+  isHit: boolean;
+  evictedPage: number | null;
+}
+
+const CAPACITY = 4;
+const REF_LENGTH = 30;
+const PAGE_MAX = 8;
+const PLAY_SPEED_MS = 600;
+
+// --- Helper: Generate Reference String with Locality ---
+const generateReferenceString = (length: number, maxPage: number) => {
+  const seq: number[] = [];
+  let currentBase = Math.floor(Math.random() * maxPage);
+  for (let i = 0; i < length; i++) {
+    // 70% chance to stay near current base (locality of reference)
+    if (Math.random() < 0.7) {
+      const offset = Math.floor(Math.random() * 3) - 1; // -1, 0, 1
+      let next = currentBase + offset;
+      if (next < 0) next = 0;
+      if (next >= maxPage) next = maxPage - 1;
+      seq.push(next);
+    } else {
+      currentBase = Math.floor(Math.random() * maxPage);
+      seq.push(currentBase);
+    }
+  }
+  return seq;
+};
+
+export default function App() {
+  // --- State ---
+  const [algorithm, setAlgorithm] = useState<Algorithm>('FIFO');
+  const [referenceString, setReferenceString] = useState<number[]>([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [frames, setFrames] = useState<Frame[]>([]);
+  const [clockPointer, setClockPointer] = useState(0);
+  const [time, setTime] = useState(0);
+  const [history, setHistory] = useState<StepHistory[]>([]);
+  const [isPlaying, setIsPlaying] = useState(false);
+  
+  const playIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // --- Initialization ---
+  const initializeSimulation = useCallback((algo: Algorithm = algorithm, newRefString?: number[]) => {
+    const refs = newRefString || generateReferenceString(REF_LENGTH, PAGE_MAX);
+    setReferenceString(refs);
+    setAlgorithm(algo);
+    setCurrentIndex(0);
+    setTime(0);
+    setClockPointer(0);
+    setHistory([]);
+    setIsPlaying(false);
+    
+    const initialFrames: Frame[] = Array.from({ length: CAPACITY }, (_, i) => ({
+      id: i,
+      page: null,
+      loadedAt: -1,
+      lastUsed: -1,
+      useBit: false,
+    }));
+    setFrames(initialFrames);
+  }, [algorithm]);
+
+  // Initial load
+  useEffect(() => {
+    initializeSimulation();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // --- Simulation Logic ---
+  const stepSimulation = useCallback(() => {
+    if (currentIndex >= referenceString.length) {
+      setIsPlaying(false);
+      return;
+    }
+
+    const page = referenceString[currentIndex];
+    const newFrames = [...frames];
+    let isHit = false;
+    let evictedPage: number | null = null;
+    let newClockPointer = clockPointer;
+    const currentTime = time + 1;
+
+    // Check for Hit
+    const hitIndex = newFrames.findIndex(f => f.page === page);
+
+    if (hitIndex !== -1) {
+      // HIT
+      isHit = true;
+      newFrames[hitIndex].lastUsed = currentTime;
+      newFrames[hitIndex].useBit = true;
+    } else {
+      // MISS (Page Fault)
+      // Check for empty frame
+      const emptyIndex = newFrames.findIndex(f => f.page === null);
+      
+      if (emptyIndex !== -1) {
+        // Fill empty frame
+        newFrames[emptyIndex] = {
+          id: emptyIndex,
+          page,
+          loadedAt: currentTime,
+          lastUsed: currentTime,
+          useBit: true,
+        };
+      } else {
+        // EVICT based on algorithm
+        let victimIndex = -1;
+
+        if (algorithm === 'FIFO') {
+          victimIndex = 0;
+          let oldestTime = newFrames[0].loadedAt;
+          for (let i = 1; i < CAPACITY; i++) {
+            if (newFrames[i].loadedAt < oldestTime) {
+              oldestTime = newFrames[i].loadedAt;
+              victimIndex = i;
+            }
+          }
+        } 
+        else if (algorithm === 'LRU') {
+          victimIndex = 0;
+          let oldestTime = newFrames[0].lastUsed;
+          for (let i = 1; i < CAPACITY; i++) {
+            if (newFrames[i].lastUsed < oldestTime) {
+              oldestTime = newFrames[i].lastUsed;
+              victimIndex = i;
+            }
+          }
+        } 
+        else if (algorithm === 'CLOCK') {
+          let ptr = newClockPointer;
+          while (true) {
+            if (newFrames[ptr].useBit) {
+              // Give second chance
+              newFrames[ptr].useBit = false;
+              ptr = (ptr + 1) % CAPACITY;
+            } else {
+              // Found victim
+              victimIndex = ptr;
+              newClockPointer = (ptr + 1) % CAPACITY;
+              break;
+            }
+          }
+        }
+
+        evictedPage = newFrames[victimIndex].page;
+        newFrames[victimIndex] = {
+          id: victimIndex,
+          page,
+          loadedAt: currentTime,
+          lastUsed: currentTime,
+          useBit: true,
+        };
+      }
+    }
+
+    // Update State
+    setFrames(newFrames);
+    setClockPointer(newClockPointer);
+    setTime(currentTime);
+    setCurrentIndex(prev => prev + 1);
+    setHistory(prev => [...prev, {
+      step: currentTime,
+      page,
+      isHit,
+      evictedPage
+    }]);
+
+  }, [currentIndex, referenceString, frames, time, clockPointer, algorithm]);
+
+  // --- Playback Control ---
+  useEffect(() => {
+    if (isPlaying) {
+      playIntervalRef.current = setInterval(() => {
+        stepSimulation();
+      }, PLAY_SPEED_MS);
+    } else {
+      if (playIntervalRef.current) clearInterval(playIntervalRef.current);
+    }
+    return () => {
+      if (playIntervalRef.current) clearInterval(playIntervalRef.current);
+    };
+  }, [isPlaying, stepSimulation]);
+
+  const togglePlay = () => setIsPlaying(!isPlaying);
+  const handleReset = () => initializeSimulation(algorithm, referenceString);
+  const handleNewSequence = () => initializeSimulation(algorithm);
+  
+  const handleAlgoChange = (algo: Algorithm) => {
+    initializeSimulation(algo, referenceString);
+  };
+
+  // --- Derived Stats ---
+  const hits = history.filter(h => h.isHit).length;
+  const misses = history.filter(h => !h.isHit).length;
+  const hitRate = history.length > 0 ? ((hits / history.length) * 100).toFixed(1) : '0.0';
+
+  // --- Render Helpers ---
+  const getAlgoDescription = () => {
+    switch(algorithm) {
+      case 'FIFO': return "First-In-First-Out: Evicts the page that has been in memory the longest.";
+      case 'LRU': return "Least Recently Used: Evicts the page that has not been used for the longest time.";
+      case 'CLOCK': return "Clock (Second Chance): Uses a circular buffer and a 'use bit' to approximate LRU efficiently.";
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-stone-100 text-stone-800 font-sans p-6">
+      <div className="max-w-7xl mx-auto space-y-6">
+        
+        {/* Header & Controls */}
+        <header className="bg-white rounded-xl shadow-sm border border-stone-200 p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight text-stone-900 flex items-center gap-2">
+              <Cpu className="w-6 h-6 text-indigo-600" />
+              Page Replacement Simulator
+            </h1>
+            <p className="text-sm text-stone-500 mt-1">
+              Visualize virtual memory page faults and replacement policies.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex bg-stone-100 p-1 rounded-lg border border-stone-200">
+              {(['FIFO', 'LRU', 'CLOCK'] as Algorithm[]).map(algo => (
+                <button
+                  key={algo}
+                  onClick={() => handleAlgoChange(algo)}
+                  className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${
+                    algorithm === algo 
+                      ? 'bg-white text-indigo-700 shadow-sm' 
+                      : 'text-stone-600 hover:text-stone-900 hover:bg-stone-200/50'
+                  }`}
+                >
+                  {algo}
+                </button>
+              ))}
+            </div>
+
+            <div className="h-8 w-px bg-stone-300 mx-1 hidden md:block" />
+
+            <button
+              onClick={handleNewSequence}
+              className="px-4 py-2 text-sm font-medium bg-white border border-stone-200 text-stone-700 rounded-lg hover:bg-stone-50 transition-colors flex items-center gap-2"
+            >
+              <Database className="w-4 h-4" />
+              New Sequence
+            </button>
+          </div>
+        </header>
+
+        {/* Info Banner */}
+        <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-4 flex items-start gap-3 text-indigo-800">
+          <Info className="w-5 h-5 mt-0.5 flex-shrink-0" />
+          <div>
+            <h3 className="font-medium text-sm">Algorithm: {algorithm}</h3>
+            <p className="text-sm text-indigo-700/80 mt-1">{getAlgoDescription()}</p>
+          </div>
+        </div>
+
+        {/* Main Workspace */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          
+          {/* Left Column: Reference String & Controls */}
+          <div className="lg:col-span-8 space-y-6">
+            
+            {/* Reference String Panel */}
+            <div className="bg-white rounded-xl shadow-sm border border-stone-200 p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-lg font-medium flex items-center gap-2">
+                  <List className="w-5 h-5 text-stone-400" />
+                  Reference String (Upcoming Page Accesses)
+                </h2>
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleReset}
+                    className="p-2 text-stone-500 hover:text-stone-900 hover:bg-stone-100 rounded-lg transition-colors"
+                    title="Reset Simulation"
+                  >
+                    <RotateCcw className="w-5 h-5" />
+                  </button>
+                  <button
+                    onClick={stepSimulation}
+                    disabled={currentIndex >= referenceString.length || isPlaying}
+                    className="p-2 text-stone-500 hover:text-stone-900 hover:bg-stone-100 rounded-lg transition-colors disabled:opacity-50"
+                    title="Step Forward"
+                  >
+                    <StepForward className="w-5 h-5" />
+                  </button>
+                  <button
+                    onClick={togglePlay}
+                    disabled={currentIndex >= referenceString.length}
+                    className={`p-2 rounded-lg transition-colors flex items-center gap-2 px-4 ${
+                      isPlaying 
+                        ? 'bg-amber-100 text-amber-700 hover:bg-amber-200' 
+                        : 'bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50'
+                    }`}
+                  >
+                    {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+                    <span className="text-sm font-medium">{isPlaying ? 'Pause' : 'Auto-Run'}</span>
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                {referenceString.map((pageNum, idx) => {
+                  const isCurrent = idx === currentIndex;
+                  const isPast = idx < currentIndex;
+                  
+                  let stateClass = "bg-stone-50 border-stone-200 text-stone-400"; // Future
+                  if (isCurrent) stateClass = "bg-indigo-600 border-indigo-600 text-white shadow-md ring-2 ring-indigo-200 ring-offset-2"; // Active
+                  else if (isPast) {
+                    const stepStat = history[idx];
+                    stateClass = stepStat?.isHit 
+                      ? "bg-emerald-50 border-emerald-200 text-emerald-700" 
+                      : "bg-rose-50 border-rose-200 text-rose-700";
+                  }
+
+                  return (
+                    <div 
+                      key={idx}
+                      className={`w-10 h-10 flex items-center justify-center rounded-lg border text-sm font-semibold transition-all duration-300 ${stateClass}`}
+                    >
+                      {pageNum}
+                    </div>
+                  );
+                })}
+              </div>
+              
+              <div className="mt-4 flex gap-4 text-xs font-medium text-stone-500">
+                <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-sm bg-indigo-600"></div> Current</div>
+                <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-sm bg-emerald-100 border border-emerald-200"></div> TLB/Page Hit</div>
+                <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-sm bg-rose-100 border border-rose-200"></div> Page Fault</div>
+              </div>
+            </div>
+
+            {/* Timeline Chart */}
+            <div className="bg-white rounded-xl shadow-sm border border-stone-200 p-6">
+              <h2 className="text-lg font-medium flex items-center gap-2 mb-6">
+                <Activity className="w-5 h-5 text-stone-400" />
+                Fault Timeline
+              </h2>
+              
+              <div className="h-32 flex items-end gap-1">
+                {referenceString.map((_, idx) => {
+                  const stepStat = history[idx];
+                  if (!stepStat) {
+                    return <div key={idx} className="flex-1 bg-stone-50 border-t border-stone-100 h-full rounded-t-sm opacity-50"></div>;
+                  }
+                  
+                  const h = stepStat.isHit ? '20%' : '100%';
+                  const bg = stepStat.isHit ? 'bg-emerald-400' : 'bg-rose-500';
+                  
+                  return (
+                    <div 
+                      key={idx} 
+                      className="flex-1 flex flex-col justify-end group relative"
+                    >
+                      <div 
+                        className={`w-full ${bg} rounded-t-sm transition-all duration-500`}
+                        style={{ height: h }}
+                      />
+                      {/* Tooltip */}
+                      <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 hidden group-hover:block z-10 bg-stone-800 text-white text-xs py-1 px-2 rounded whitespace-nowrap">
+                        Step {idx + 1}: Page {stepStat.page} {stepStat.isHit ? '(Hit)' : '(Fault)'}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="flex justify-between mt-2 text-xs text-stone-400">
+                <span>Start</span>
+                <span>Time (Steps)</span>
+                <span>End</span>
+              </div>
+            </div>
+
+          </div>
+
+          {/* Right Column: Physical Memory & Stats */}
+          <div className="lg:col-span-4 space-y-6">
+            
+            {/* Stats Panel */}
+            <div className="bg-white rounded-xl shadow-sm border border-stone-200 p-6 grid grid-cols-2 gap-4">
+              <div className="col-span-2 flex justify-between items-center mb-2">
+                <h2 className="text-sm font-medium text-stone-500 uppercase tracking-wider">Performance</h2>
+                <span className="text-xs font-semibold bg-stone-100 text-stone-600 px-2 py-1 rounded-full">
+                  Step {currentIndex} / {referenceString.length}
+                </span>
+              </div>
+              
+              <div className="bg-stone-50 rounded-lg p-4 border border-stone-100">
+                <div className="text-3xl font-light text-rose-600">{misses}</div>
+                <div className="text-xs font-medium text-stone-500 mt-1 uppercase">Page Faults</div>
+              </div>
+              
+              <div className="bg-stone-50 rounded-lg p-4 border border-stone-100">
+                <div className="text-3xl font-light text-emerald-600">{hitRate}%</div>
+                <div className="text-xs font-medium text-stone-500 mt-1 uppercase">Hit Rate</div>
+              </div>
+            </div>
+
+            {/* Physical Memory (Frames) */}
+            <div className="bg-white rounded-xl shadow-sm border border-stone-200 p-6">
+              <h2 className="text-lg font-medium flex items-center gap-2 mb-6">
+                <Database className="w-5 h-5 text-stone-400" />
+                Physical Memory
+              </h2>
+
+              <div className="space-y-3 relative">
+                {frames.map((frame, idx) => {
+                  const isEmpty = frame.page === null;
+                  const isTargetOfClock = algorithm === 'CLOCK' && clockPointer === idx;
+                  
+                  return (
+                    <div 
+                      key={frame.id}
+                      className={`relative rounded-xl border-2 transition-all duration-300 flex items-center p-4 ${
+                        isEmpty 
+                          ? 'border-dashed border-stone-200 bg-stone-50/50' 
+                          : 'border-solid border-stone-200 bg-white shadow-sm'
+                      } ${isTargetOfClock ? 'ring-2 ring-indigo-400 ring-offset-1' : ''}`}
+                    >
+                      {/* Clock Pointer Arrow */}
+                      {isTargetOfClock && (
+                        <div className="absolute -left-6 text-indigo-500 animate-pulse">
+                          <ArrowRight className="w-4 h-4" />
+                        </div>
+                      )}
+
+                      {/* Frame Number */}
+                      <div className="w-12 h-12 flex-shrink-0 rounded-lg bg-stone-100 flex flex-col items-center justify-center border border-stone-200 mr-4">
+                        <span className="text-xs text-stone-400 font-medium">FR</span>
+                        <span className="text-sm font-bold text-stone-700">{idx}</span>
+                      </div>
+
+                      {/* Page Content */}
+                      <div className="flex-1">
+                        {isEmpty ? (
+                          <span className="text-stone-400 italic text-sm">Empty Frame</span>
+                        ) : (
+                          <div className="flex flex-col">
+                            <span className="text-lg font-bold text-stone-800">
+                              Page {frame.page}
+                            </span>
+                            
+                            {/* Algorithm Specific Metadata */}
+                            <div className="flex items-center gap-3 mt-1 text-xs text-stone-500 font-medium">
+                              {algorithm === 'FIFO' && (
+                                <span className="flex items-center gap-1">
+                                  <ClockIcon className="w-3 h-3" />
+                                  Loaded at t={frame.loadedAt}
+                                </span>
+                              )}
+                              {algorithm === 'LRU' && (
+                                <span className="flex items-center gap-1">
+                                  <ClockIcon className="w-3 h-3" />
+                                  Last used t={frame.lastUsed}
+                                </span>
+                              )}
+                              {algorithm === 'CLOCK' && (
+                                <span className={`flex items-center gap-1 px-1.5 py-0.5 rounded ${frame.useBit ? 'bg-indigo-100 text-indigo-700' : 'bg-stone-200 text-stone-600'}`}>
+                                  Use Bit: {frame.useBit ? '1' : '0'}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+=== BLOCK 5: Visualization Of Page Faults ===
+Description: visualization of page faults over time
+
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+
+// --- Types & Interfaces ---
+interface AccessRecord {
+  tick: number;
+  page: number;
+  isFault: boolean;
+  totalFaults: number;
+}
+
+// --- Constants ---
+const MAX_FRAMES = 4;
+const TOTAL_PAGES = 16;
+const CHART_WINDOW = 100; // How many ticks to show in the chart
+const SIMULATION_SPEED_MS = 200;
+
+// --- Helper: Inline Icons ---
+const PlayIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polygon points="5 3 19 12 5 21 5 3"></polygon>
+  </svg>
+);
+
+const PauseIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="6" y="4" width="4" height="16"></rect>
+    <rect x="14" y="4" width="4" height="16"></rect>
+  </svg>
+);
+
+const StepIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polygon points="5 4 15 12 5 20 5 4"></polygon>
+    <line x1="19" y1="5" x2="19" y2="19"></line>
+  </svg>
+);
+
+const ResetIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+    <path d="M3 3v5h5"></path>
+  </svg>
+);
+
+// --- Main Component ---
+export default function App() {
+  // --- State ---
+  const [isRunning, setIsRunning] = useState(false);
+  const [tick, setTick] = useState(0);
+  const [faults, setFaults] = useState(0);
+  const [frames, setFrames] = useState<number[]>([]);
+  const [history, setHistory] = useState<AccessRecord[]>([]);
+  
+  // Ref to keep track of the last accessed page to simulate locality of reference
+  const lastPageRef = useRef<number>(Math.floor(Math.random() * TOTAL_PAGES));
+
+  // --- Simulation Logic ---
+  const generateNextPage = useCallback(() => {
+    // 70% chance to access a page close to the last one (locality)
+    // 30% chance to access a completely random page
+    const isLocal = Math.random() < 0.7;
+    if (isLocal) {
+      const offset = Math.floor(Math.random() * 5) - 2; // -2 to +2
+      let next = lastPageRef.current + offset;
+      if (next < 0) next = TOTAL_PAGES - 1;
+      if (next >= TOTAL_PAGES) next = 0;
+      lastPageRef.current = next;
+      return next;
+    } else {
+      const next = Math.floor(Math.random() * TOTAL_PAGES);
+      lastPageRef.current = next;
+      return next;
+    }
+  }, []);
+
+  const stepSimulation = useCallback(() => {
+    setTick((prevTick) => {
+      const currentTick = prevTick + 1;
+      const page = generateNextPage();
+      
+      setFrames((prevFrames) => {
+        let newFrames = [...prevFrames];
+        let isFault = false;
+
+        if (!newFrames.includes(page)) {
+          isFault = true;
+          // LRU Eviction: remove the first element (least recently used)
+          if (newFrames.length >= MAX_FRAMES) {
+            newFrames.shift();
+          }
+          newFrames.push(page);
+        } else {
+          // Hit: move to the end (most recently used)
+          newFrames = newFrames.filter((p) => p !== page);
+          newFrames.push(page);
+        }
+
+        setFaults((prevFaults) => {
+          const newFaults = prevFaults + (isFault ? 1 : 0);
+          
+          setHistory((prevHistory) => {
+            const newRecord = {
+              tick: currentTick,
+              page,
+              isFault,
+              totalFaults: newFaults,
+            };
+            // Keep memory bounded, though for a real app we might want full history.
+            // We'll keep up to 1000 records in state, but only chart the last CHART_WINDOW.
+            const updatedHistory = [...prevHistory, newRecord];
+            if (updatedHistory.length > 1000) {
+              return updatedHistory.slice(updatedHistory.length - 1000);
+            }
+            return updatedHistory;
+          });
+
+          return newFaults;
+        });
+
+        return newFrames;
+      });
+
+      return currentTick;
+    });
+  }, [generateNextPage]);
+
+  const resetSimulation = () => {
+    setIsRunning(false);
+    setTick(0);
+    setFaults(0);
+    setFrames([]);
+    setHistory([]);
+    lastPageRef.current = Math.floor(Math.random() * TOTAL_PAGES);
+  };
+
+  // --- Auto-run Effect ---
+  useEffect(() => {
+    let interval: number | undefined;
+    if (isRunning) {
+      interval = window.setInterval(stepSimulation, SIMULATION_SPEED_MS);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [isRunning, stepSimulation]);
+
+  // --- Derived Data for Chart ---
+  const displayHistory = history.slice(-CHART_WINDOW);
+  const faultRate = tick > 0 ? ((faults / tick) * 100).toFixed(1) : '0.0';
+
+  // --- Chart Rendering Helpers ---
+  const viewBoxWidth = 800;
+  const viewBoxHeight = 240;
+  const chartPadding = { top: 20, right: 20, bottom: 30, left: 50 };
+  const innerWidth = viewBoxWidth - chartPadding.left - chartPadding.right;
+  const innerHeight = viewBoxHeight - chartPadding.top - chartPadding.bottom;
+
+  const minTick = displayHistory.length > 0 ? displayHistory[0].tick : 0;
+  const maxTick = displayHistory.length > 0 ? displayHistory[displayHistory.length - 1].tick : CHART_WINDOW;
+  const tickRange = Math.max(CHART_WINDOW, maxTick - minTick);
+
+  const minFaults = displayHistory.length > 0 ? displayHistory[0].totalFaults : 0;
+  const maxFaults = displayHistory.length > 0 ? displayHistory[displayHistory.length - 1].totalFaults : 10;
+  const faultRange = Math.max(10, maxFaults - minFaults);
+
+  const getX = (t: number) => chartPadding.left + ((t - minTick) / tickRange) * innerWidth;
+  const getY = (f: number) => chartPadding.top + innerHeight - ((f - minFaults) / faultRange) * innerHeight;
+
+  // Generate SVG Path for the area chart
+  let areaPath = '';
+  let linePath = '';
+  if (displayHistory.length > 0) {
+    const startX = getX(displayHistory[0].tick);
+    const startY = getY(displayHistory[0].totalFaults);
+    
+    linePath = `M ${startX},${startY} `;
+    areaPath = `M ${startX},${chartPadding.top + innerHeight} L ${startX},${startY} `;
+
+    displayHistory.forEach((record) => {
+      const x = getX(record.tick);
+      const y = getY(record.totalFaults);
+      linePath += `L ${x},${y} `;
+      areaPath += `L ${x},${y} `;
+    });
+
+    const lastX = getX(displayHistory[displayHistory.length - 1].tick);
+    areaPath += `L ${lastX},${chartPadding.top + innerHeight} Z`;
+  }
+
+  return (
+    <div className="min-h-screen bg-slate-50 text-slate-800 font-sans p-6 md:p-10 flex flex-col items-center">
+      <div className="w-full max-w-5xl space-y-6">
+        
+        {/* Header */}
+        <header className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-slate-200 pb-6">
+          <div>
+            <h1 className="text-3xl font-light tracking-tight text-slate-900">Virtual Memory Explorer</h1>
+            <p className="text-slate-500 mt-1">Visualization of Page Faults Over Time (LRU Policy)</p>
+          </div>
+          
+          {/* Controls */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setIsRunning(!isRunning)}
+              className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                isRunning 
+                  ? 'bg-amber-100 text-amber-800 hover:bg-amber-200' 
+                  : 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
+              }`}
+            >
+              {isRunning ? <PauseIcon /> : <PlayIcon />}
+              {isRunning ? 'Pause' : 'Auto Run'}
+            </button>
+            <button
+              onClick={stepSimulation}
+              disabled={isRunning}
+              className="flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium bg-slate-200 text-slate-700 hover:bg-slate-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              <StepIcon />
+              Step
+            </button>
+            <button
+              onClick={resetSimulation}
+              className="flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium bg-slate-200 text-slate-700 hover:bg-slate-300 transition-colors"
+            >
+              <ResetIcon />
+              Reset
+            </button>
+          </div>
+        </header>
+
+        {/* Stats Row */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col">
+            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Total Accesses</span>
+            <span className="text-3xl font-light text-slate-900">{tick}</span>
+          </div>
+          <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col">
+            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Total Page Faults</span>
+            <span className="text-3xl font-light text-rose-600">{faults}</span>
+          </div>
+          <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col">
+            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Fault Rate</span>
+            <span className="text-3xl font-light text-slate-900">{faultRate}%</span>
+          </div>
+        </div>
+
+        {/* Main Visualization Panel */}
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+          <div className="p-5 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
+            <h2 className="text-sm font-semibold text-slate-700">Cumulative Page Faults Timeline</h2>
+            <div className="flex items-center gap-4 text-xs text-slate-500">
+              <div className="flex items-center gap-1">
+                <div className="w-2 h-2 rounded-full bg-rose-500"></div> Fault
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-2 h-2 rounded-full bg-emerald-400"></div> Hit
+              </div>
+            </div>
+          </div>
+          
+          <div className="p-6 overflow-x-auto">
+            <svg 
+              viewBox={`0 0 ${viewBoxWidth} ${viewBoxHeight}`} 
+              className="w-full h-auto min-w-[600px] drop-shadow-sm"
+              style={{ maxHeight: '300px' }}
+            >
+              <defs>
+                <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#f43f5e" stopOpacity="0.2" />
+                  <stop offset="100%" stopColor="#f43f5e" stopOpacity="0.0" />
+                </linearGradient>
+              </defs>
+
+              {/* Grid Lines */}
+              {[0, 0.25, 0.5, 0.75, 1].map((ratio) => {
+                const y = chartPadding.top + innerHeight * ratio;
+                const val = Math.round(maxFaults - faultRange * ratio);
+                return (
+                  <g key={`grid-${ratio}`}>
+                    <line 
+                      x1={chartPadding.left} 
+                      y1={y} 
+                      x2={viewBoxWidth - chartPadding.right} 
+                      y2={y} 
+                      stroke="#e2e8f0" 
+                      strokeWidth="1" 
+                      strokeDasharray="4 4" 
+                    />
+                    <text 
+                      x={chartPadding.left - 10} 
+                      y={y + 4} 
+                      textAnchor="end" 
+                      fontSize="10" 
+                      fill="#64748b"
+                      className="font-mono"
+                    >
+                      {val}
+                    </text>
+                  </g>
+                );
+              })}
+
+              {/* X Axis Labeling (Ticks) */}
+              <text x={viewBoxWidth / 2} y={viewBoxHeight - 5} textAnchor="middle" fontSize="10" fill="#64748b" className="uppercase tracking-widest">
+                Memory Access Timeline (Last {CHART_WINDOW} Ticks)
+              </text>
+
+              {/* Data Paths */}
+              {displayHistory.length > 0 && (
+                <>
+                  <path d={areaPath} fill="url(#areaGradient)" />
+                  <path d={linePath} fill="none" stroke="#f43f5e" strokeWidth="2" strokeLinejoin="round" />
+                  
+                  {/* Event Markers */}
+                  {displayHistory.map((record) => {
+                    const x = getX(record.tick);
+                    const y = getY(record.totalFaults);
+                    return (
+                      <g key={`marker-${record.tick}`}>
+                        {record.isFault ? (
+                          <>
+                            <line x1={x} y1={y} x2={x} y2={chartPadding.top + innerHeight} stroke="#f43f5e" strokeWidth="1" strokeOpacity="0.3" strokeDasharray="2 2" />
+                            <circle cx={x} cy={y} r="3" fill="#f43f5e" />
+                          </>
+                        ) : (
+                          <circle cx={x} cy={y} r="2" fill="#34d399" />
+                        )}
+                      </g>
+                    );
+                  })}
+                </>
+              )}
+            </svg>
+          </div>
+        </div>
+
+        {/* Bottom Panels: Physical Memory & Recent Activity */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          
+          {/* Physical Memory (Frames) */}
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+            <div className="p-4 border-b border-slate-100 bg-slate-50/50">
+              <h2 className="text-sm font-semibold text-slate-700">Physical Memory (LRU Frames)</h2>
+            </div>
+            <div className="p-6 flex-1 flex items-center justify-center gap-4">
+              {Array.from({ length: MAX_FRAMES }).map((_, i) => {
+                const page = frames[i];
+                const isEmpty = page === undefined;
+                return (
+                  <div 
+                    key={`frame-${i}`} 
+                    className={`w-20 h-24 rounded-lg border-2 flex flex-col items-center justify-center transition-all ${
+                      isEmpty 
+                        ? 'border-dashed border-slate-200 bg-slate-50' 
+                        : 'border-solid border-indigo-200 bg-indigo-50 shadow-sm'
+                    }`}
+                  >
+                    <span className="text-xs text-slate-400 mb-1">Frame {i}</span>
+                    <span className={`text-2xl font-mono ${isEmpty ? 'text-slate-300' : 'text-indigo-700'}`}>
+                      {isEmpty ? '-' : `P${page}`}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Recent Activity Log */}
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col h-64">
+            <div className="p-4 border-b border-slate-100 bg-slate-50/50">
+              <h2 className="text-sm font-semibold text-slate-700">Recent Access Log</h2>
+            </div>
+            <div className="p-0 overflow-y-auto flex-1 flex flex-col-reverse">
+              <table className="w-full text-left text-sm">
+                <thead className="bg-white sticky top-0 border-b border-slate-100 shadow-sm">
+                  <tr>
+                    <th className="px-4 py-2 font-medium text-slate-500">Tick</th>
+                    <th className="px-4 py-2 font-medium text-slate-500">Page</th>
+                    <th className="px-4 py-2 font-medium text-slate-500">Result</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {displayHistory.slice().reverse().map((record) => (
+                    <tr key={`log-${record.tick}`} className="border-b border-slate-50 last:border-0 hover:bg-slate-50">
+                      <td className="px-4 py-2 font-mono text-slate-600">{record.tick}</td>
+                      <td className="px-4 py-2 font-mono text-slate-800">P{record.page}</td>
+                      <td className="px-4 py-2">
+                        {record.isFault ? (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-rose-100 text-rose-700">
+                            Fault
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-emerald-100 text-emerald-700">
+                            Hit
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                  {displayHistory.length === 0 && (
+                    <tr>
+                      <td colSpan={3} className="px-4 py-8 text-center text-slate-400 italic">
+                        No memory accesses yet. Press Step or Auto Run.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+=== BLOCK 6: Interactive Step-Through Of Address ===
+Description: interactive step-through of address translation.
+
+import React, { useState, useEffect, useRef } from 'react';
+
+// --- Types ---
+type TLBEntry = { id: number; valid: boolean; vpn: number | null; ppn: number | null; lastUsed: number };
+type PTEntry = { vpn: number; valid: boolean; ppn: number | null };
+type Frame = { ppn: number; data: string; allocated: boolean };
+
+// --- Constants ---
+const NUM_PAGES = 16; // 4-bit VPN
+const NUM_FRAMES = 8; // 3-bit PPN
+const PAGE_SIZE = 16; // 4-bit Offset
+const TLB_SIZE = 4;
+
+// --- Helper Functions ---
+const toBin = (num: number | null, bits: number) => {
+  if (num === null) return '-'.repeat(bits);
+  return num.toString(2).padStart(bits, '0');
+};
+
+const generateRandomData = () => Math.random().toString(36).substring(2, 6).toUpperCase();
+
+// --- Main Component ---
+export default function App() {
+  // --- State ---
+  const [virtualAddress, setVirtualAddress] = useState<string>('10100101');
+  const [step, setStep] = useState<number>(0);
+  const [isPlaying, setIsPlaying] = useState<boolean>(false);
+  const [log, setLog] = useState<string>('Enter a Virtual Address and click "Start" to begin translation.');
+  
+  // Hardware State
+  const [tlb, setTlb] = useState<TLBEntry[]>([]);
+  const [pageTable, setPageTable] = useState<PTEntry[]>([]);
+  const [memory, setMemory] = useState<Frame[]>([]);
+  
+  // Intermediate Translation State
+  const [currentVpn, setCurrentVpn] = useState<number | null>(null);
+  const [currentOffset, setCurrentOffset] = useState<number | null>(null);
+  const [currentPpn, setCurrentPpn] = useState<number | null>(null);
+  const [tlbHitIdx, setTlbHitIdx] = useState<number | null>(null);
+  const [ptHitIdx, setPtHitIdx] = useState<number | null>(null);
+  const [faulting, setFaulting] = useState<boolean>(false);
+  
+  // Stats
+  const [stats, setStats] = useState({ tlbHits: 0, tlbMisses: 0, ptHits: 0, pageFaults: 0 });
+
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // --- Initialization ---
+  useEffect(() => {
+    initializeSystem();
+  }, []);
+
+  const initializeSystem = () => {
+    // Init Memory
+    const initialMemory: Frame[] = Array.from({ length: NUM_FRAMES }, (_, i) => ({
+      ppn: i,
+      data: i < 5 ? generateRandomData() : '----',
+      allocated: i < 5
+    }));
+    setMemory(initialMemory);
+
+    // Init Page Table (some valid, some invalid)
+    const initialPT: PTEntry[] = Array.from({ length: NUM_PAGES }, (_, i) => {
+      const isValid = Math.random() > 0.4 && i < 10; // Bias towards some valid entries
+      return {
+        vpn: i,
+        valid: isValid,
+        ppn: isValid ? Math.floor(Math.random() * 5) : null // Map to allocated frames
+      };
+    });
+    // Ensure the default address (1010 -> 10) has a specific state for predictable first run if unchanged
+    initialPT[10] = { vpn: 10, valid: false, ppn: null }; 
+    setPageTable(initialPT);
+
+    // Init TLB (empty initially)
+    const initialTLB: TLBEntry[] = Array.from({ length: TLB_SIZE }, (_, i) => ({
+      id: i, valid: false, vpn: null, ppn: null, lastUsed: 0
+    }));
+    setTlb(initialTLB);
+    
+    resetTranslationState();
+    setLog('System initialized. Ready for address translation.');
+  };
+
+  const resetTranslationState = () => {
+    setStep(0);
+    setCurrentVpn(null);
+    setCurrentOffset(null);
+    setCurrentPpn(null);
+    setTlbHitIdx(null);
+    setPtHitIdx(null);
+    setFaulting(false);
+    setIsPlaying(false);
+    if (timerRef.current) clearInterval(timerRef.current);
+  };
+
+  const handleRandomAddress = () => {
+    const randomVA = Math.floor(Math.random() * 256);
+    setVirtualAddress(toBin(randomVA, 8));
+    resetTranslationState();
+    setLog('New random address generated. Click "Start" to translate.');
+  };
+
+  // --- Step Logic (State Machine) ---
+  const advanceStep = () => {
+    setStep((prevStep) => {
+      let nextStep = prevStep;
+      
+      switch (prevStep) {
+        case 0: // START -> EXTRACT
+          const vpn = parseInt(virtualAddress.substring(0, 4), 2);
+          const offset = parseInt(virtualAddress.substring(4, 8), 2);
+          setCurrentVpn(vpn);
+          setCurrentOffset(offset);
+          setLog(`Step 1: Extracted Virtual Page Number (VPN) = ${vpn} (${toBin(vpn, 4)}) and Offset = ${offset} (${toBin(offset, 4)}).`);
+          nextStep = 1;
+          break;
+          
+        case 1: // EXTRACT -> TLB_SEARCH
+          setLog(`Step 2: Searching Translation Lookaside Buffer (TLB) for VPN ${currentVpn}...`);
+          nextStep = 2;
+          break;
+          
+        case 2: // TLB_SEARCH -> TLB_RESULT
+          const tlbEntryIdx = tlb.findIndex(e => e.valid && e.vpn === currentVpn);
+          if (tlbEntryIdx !== -1) {
+            setTlbHitIdx(tlbEntryIdx);
+            setCurrentPpn(tlb[tlbEntryIdx].ppn);
+            setStats(s => ({ ...s, tlbHits: s.tlbHits + 1 }));
+            setLog(`Step 3: TLB Hit! Found VPN ${currentVpn} mapped to Physical Page Number (PPN) ${tlb[tlbEntryIdx].ppn}.`);
+            
+            // Update LRU
+            setTlb(prev => prev.map((e, i) => i === tlbEntryIdx ? { ...e, lastUsed: Date.now() } : e));
+            nextStep = 7; // Jump to PA calculation
+          } else {
+            setStats(s => ({ ...s, tlbMisses: s.tlbMisses + 1 }));
+            setLog(`Step 3: TLB Miss. VPN ${currentVpn} not found in TLB. Must check Page Table.`);
+            nextStep = 3;
+          }
+          break;
+          
+        case 3: // TLB_RESULT (Miss) -> PT_SEARCH
+          setLog(`Step 4: Accessing Page Table in memory at index (VPN) ${currentVpn}...`);
+          nextStep = 4;
+          break;
+          
+        case 4: // PT_SEARCH -> PT_RESULT
+          const ptEntry = pageTable[currentVpn!];
+          setPtHitIdx(currentVpn);
+          if (ptEntry.valid) {
+            setCurrentPpn(ptEntry.ppn);
+            setStats(s => ({ ...s, ptHits: s.ptHits + 1 }));
+            setLog(`Step 5: Page Table Hit! Valid bit is 1. PPN is ${ptEntry.ppn}. Updating TLB...`);
+            updateTLB(currentVpn!, ptEntry.ppn!);
+            nextStep = 7; // Jump to PA calculation
+          } else {
+            setFaulting(true);
+            setStats(s => ({ ...s, pageFaults: s.pageFaults + 1 }));
+            setLog(`Step 5: Page Fault! Valid bit is 0. Page is not in physical memory. OS must intervene.`);
+            nextStep = 5;
+          }
+          break;
+          
+        case 5: // PT_RESULT (Fault) -> FAULT_HANDLER
+          setLog(`Step 6: OS handling Page Fault. Allocating free frame, loading data from disk, updating Page Table and TLB...`);
+          handlePageFault(currentVpn!);
+          nextStep = 6;
+          break;
+          
+        case 6: // FAULT_HANDLER -> CALC_PA
+          setFaulting(false);
+          setLog(`Step 7: Page loaded. Resuming translation. Combining PPN ${currentPpn} and Offset ${currentOffset}...`);
+          nextStep = 7;
+          break;
+          
+        case 7: // CALC_PA -> MEM_ACCESS
+          const paBin = toBin(currentPpn, 3) + toBin(currentOffset, 4);
+          const paDec = parseInt(paBin, 2);
+          setLog(`Step 8: Physical Address formed: ${paBin} (Decimal: ${paDec}). Accessing Physical Memory...`);
+          nextStep = 8;
+          break;
+          
+        case 8: // MEM_ACCESS -> DONE
+          setLog(`Step 9: Memory access complete. Data retrieved successfully.`);
+          setIsPlaying(false);
+          nextStep = 9;
+          break;
+          
+        case 9: // DONE -> Reset
+          resetTranslationState();
+          return 0; // Return early to avoid setting state to 9 again
+      }
+      return nextStep;
+    });
+  };
+
+  const updateTLB = (vpn: number, ppn: number) => {
+    setTlb(prev => {
+      const newTlb = [...prev];
+      // Find empty or LRU
+      let targetIdx = newTlb.findIndex(e => !e.valid);
+      if (targetIdx === -1) {
+        // Find LRU
+        let oldestTime = Infinity;
+        newTlb.forEach((e, i) => {
+          if (e.lastUsed < oldestTime) { oldestTime = e.lastUsed; targetIdx = i; }
+        });
+      }
+      newTlb[targetIdx] = { id: targetIdx, valid: true, vpn, ppn, lastUsed: Date.now() };
+      return newTlb;
+    });
+  };
+
+  const handlePageFault = (vpn: number) => {
+    // Find a free frame or evict (simplified: just find first unallocated or random)
+    let targetFrameIdx = memory.findIndex(f => !f.allocated);
+    if (targetFrameIdx === -1) {
+      targetFrameIdx = Math.floor(Math.random() * NUM_FRAMES); // Random eviction for simplicity
+      setLog(l => l + ` Evicting frame ${targetFrameIdx}.`);
+      // Invalidate old PT entry pointing to this frame
+      setPageTable(prev => prev.map(pt => pt.ppn === targetFrameIdx ? { ...pt, valid: false, ppn: null } : pt));
+      // Invalidate TLB entries pointing to this frame
+      setTlb(prev => prev.map(t => t.ppn === targetFrameIdx ? { ...t, valid: false, vpn: null, ppn: null } : t));
+    }
+
+    // Update Memory
+    setMemory(prev => prev.map((f, i) => i === targetFrameIdx ? { ...f, allocated: true, data: generateRandomData() } : f));
+    
+    // Update PT
+    setPageTable(prev => prev.map((pt, i) => i === vpn ? { ...pt, valid: true, ppn: targetFrameIdx } : pt));
+    
+    // Update TLB
+    updateTLB(vpn, targetFrameIdx);
+    
+    setCurrentPpn(targetFrameIdx);
+  };
+
+  // Auto-play logic
+  useEffect(() => {
+    if (isPlaying) {
+      timerRef.current = setInterval(() => {
+        advanceStep();
+      }, 1500);
+    } else if (timerRef.current) {
+      clearInterval(timerRef.current);
+    }
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+  }, [isPlaying, step]); // Depend on step to ensure we get the latest state in advanceStep
+
+
+  // --- Render Helpers ---
+  const getStepClass = (targetStep: number | number[]) => {
+    const targets = Array.isArray(targetStep) ? targetStep : [targetStep];
+    return targets.includes(step) ? 'ring-2 ring-blue-500 bg-blue-50 shadow-md transition-all duration-300' : 'transition-all duration-300';
+  };
+
+  return (
+    <div className="min-h-screen bg-stone-100 text-stone-800 p-6 font-sans">
+      <div className="max-w-7xl mx-auto space-y-6">
+        
+        {/* Header & Controls */}
+        <header className="bg-white p-6 rounded-xl shadow-sm border border-stone-200 flex flex-col md:flex-row justify-between items-center gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-stone-900 flex items-center gap-2">
+              <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" /></svg>
+              Address Translation Step-Through
+            </h1>
+            <p className="text-sm text-stone-500 mt-1">Interactive visualization of Virtual to Physical address mapping.</p>
+          </div>
+          
+          <div className="flex items-center gap-4 bg-stone-50 p-2 rounded-lg border border-stone-200">
+            <div className="flex flex-col items-center px-3 border-r border-stone-200">
+              <span className="text-xs text-stone-500 uppercase font-semibold">TLB Hits</span>
+              <span className="text-lg font-mono text-green-600">{stats.tlbHits}</span>
+            </div>
+            <div className="flex flex-col items-center px-3 border-r border-stone-200">
+              <span className="text-xs text-stone-500 uppercase font-semibold">TLB Misses</span>
+              <span className="text-lg font-mono text-orange-500">{stats.tlbMisses}</span>
+            </div>
+            <div className="flex flex-col items-center px-3">
+              <span className="text-xs text-stone-500 uppercase font-semibold">Page Faults</span>
+              <span className="text-lg font-mono text-red-600">{stats.pageFaults}</span>
+            </div>
+          </div>
+        </header>
+
+        {/* Main Workspace */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          
+          {/* Left Column: Input & Flow */}
+          <div className="lg:col-span-3 space-y-6">
+            <div className="bg-white p-5 rounded-xl shadow-sm border border-stone-200">
+              <h2 className="text-sm font-bold text-stone-400 uppercase tracking-wider mb-4">Control Panel</h2>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-medium text-stone-500 mb-1">Virtual Address (8-bit binary)</label>
+                  <div className="flex gap-2">
+                    <input 
+                      type="text" 
+                      value={virtualAddress}
+                      onChange={(e) => {
+                        const val = e.target.value.replace(/[^01]/g, '').slice(0, 8);
+                        setVirtualAddress(val.padEnd(8, '0'));
+                        resetTranslationState();
+                      }}
+                      disabled={step > 0 && step < 9}
+                      className="w-full font-mono text-center bg-stone-50 border border-stone-300 rounded-md py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none disabled:opacity-50"
+                    />
+                    <button 
+                      onClick={handleRandomAddress}
+                      disabled={step > 0 && step < 9}
+                      className="p-2 bg-stone-100 hover:bg-stone-200 border border-stone-300 rounded-md transition-colors disabled:opacity-50"
+                      title="Random Address"
+                    >
+                      <svg className="w-5 h-5 text-stone-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-2 pt-2">
+                  {step === 0 || step === 9 ? (
+                    <button 
+                      onClick={advanceStep}
+                      className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md transition-colors flex justify-center items-center gap-2"
+                    >
+                      {step === 9 ? 'Restart Translation' : 'Start Translation'}
+                    </button>
+                  ) : (
+                    <div className="flex gap-2">
+                      <button 
+                        onClick={advanceStep}
+                        disabled={isPlaying}
+                        className="flex-1 py-2 bg-stone-800 hover:bg-stone-900 text-white font-medium rounded-md transition-colors disabled:opacity-50"
+                      >
+                        Next Step
+                      </button>
+                      <button 
+                        onClick={() => setIsPlaying(!isPlaying)}
+                        className={`px-4 py-2 font-medium rounded-md transition-colors flex items-center justify-center ${isPlaying ? 'bg-amber-100 text-amber-800 border border-amber-300' : 'bg-stone-200 text-stone-700 hover:bg-stone-300'}`}
+                      >
+                        {isPlaying ? 'Pause' : 'Auto'}
+                      </button>
+                    </div>
+                  )}
+                  {(step > 0 && step < 9) && (
+                    <button 
+                      onClick={resetTranslationState}
+                      className="w-full py-1.5 text-sm text-stone-500 hover:text-stone-800 transition-colors"
+                    >
+                      Reset
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Address Breakdown Visual */}
+            <div className={`bg-white p-5 rounded-xl shadow-sm border border-stone-200 ${getStepClass([1, 7])}`}>
+              <h2 className="text-sm font-bold text-stone-400 uppercase tracking-wider mb-4">Address Breakdown</h2>
+              
+              <div className="space-y-6">
+                {/* Virtual Address */}
+                <div>
+                  <div className="text-xs text-stone-500 mb-1 text-center">Virtual
+
+
+---
+Return ONLY the complete src/App.tsx code with export default function App().

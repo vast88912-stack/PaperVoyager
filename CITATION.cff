@@ -1,0 +1,19 @@
+cff-version: 1.2.0
+message: "If you use PaperVoyager, please cite the arXiv paper."
+title: "PaperVoyager: Building Interactive Web with Visual Language Models"
+authors:
+  - family-names: Dai
+    given-names: Dasen
+  - family-names: Wu
+    given-names: Biao
+  - family-names: Fang
+    given-names: Meng
+  - family-names: Wang
+    given-names: Wenhao
+year: 2026
+repository-code: "https://github.com/"
+url: "https://arxiv.org/abs/2603.22999"
+identifiers:
+  - type: other
+    value: "arXiv:2603.22999"
+
