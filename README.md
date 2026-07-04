@@ -8,7 +8,7 @@
 
 PaperVoyager is a **Paper-to-Interactive-System Agent** that transforms static research papers into executable, interactive web systems. Instead of converting a paper into another static artifact such as a summary, webpage, or slide deck, PaperVoyager aims to produce a runnable **WebPaper** where readers can manipulate inputs, observe state transitions, and explore the mechanisms described by the paper.
 
-This repository contains the public code, prompts, benchmark utilities, and generated WebPaper artifacts associated with:
+This repository contains the public code, prompts, and benchmark utilities associated with:
 
 > Dasen Dai, Biao Wu, Meng Fang, Wenhao Wang.  
 > **PaperVoyager: Building Interactive Web with Visual Language Models.**  
@@ -48,18 +48,19 @@ flowchart LR
 
 ```text
 PaperVoyager/
-├── generate_apps.py              # Baseline prompt-to-React/TypeScript generation
-├── tools/
-│   ├── block_pipeline/           # PaperVoyager block generation, rendering, scoring, merging
-│   ├── build_portal.py           # Build a local portal over generated WebPapers
-│   ├── build_all_tsx.py          # Batch build generated Vite projects
-│   └── run_full_codegen_eval.py  # Benchmark/evaluation helpers
-├── prompts/                      # Topic-conditioned WebPaper generation prompts
-├── benchmark/                    # Benchmark evaluation and aggregation scripts
-├── outputs/                      # Generated WebPaper source artifacts
-├── docs/                         # Paper-aligned notes and repository documentation
-└── .env.example                  # Local configuration template
+|-- generate_apps.py              # Baseline prompt-to-React/TypeScript generation
+|-- tools/
+|   |-- block_pipeline/           # PaperVoyager block generation, rendering, scoring, merging
+|   |-- build_portal.py           # Build a local portal over generated WebPapers
+|   |-- build_all_tsx.py          # Batch build generated Vite projects
+|   `-- run_full_codegen_eval.py  # Benchmark/evaluation helpers
+|-- prompts/                      # Topic-conditioned WebPaper generation prompts
+|-- benchmark/                    # Benchmark runner, interaction probing, and evaluators
+|-- docs/                         # Paper-aligned notes and repository documentation
+`-- .env.example                  # Local configuration template
 ```
+
+Generated WebPaper builds, screenshots, raw model responses, and benchmark result tables are created at runtime and are not committed to this public repository.
 
 ## Quick Start
 
@@ -85,6 +86,8 @@ Generate WebPaper apps from topic prompts:
 python generate_apps.py --provider gemini --model gemini-2.0-flash-exp
 ```
 
+Generated projects are written under `outputs/`, which is ignored by git.
+
 Run the PaperVoyager block pipeline on selected topics:
 
 ```bash
@@ -108,6 +111,15 @@ Then open:
 ```text
 http://localhost:8000/index.html
 ```
+
+## What Is Kept in This Public Repo?
+
+This public repository intentionally keeps the reproducible code path and removes bulky generated artifacts:
+
+- kept: generation pipeline, block pipeline, benchmark/evaluation code, prompts, documentation
+- not committed: generated WebPaper builds, screenshots, raw model responses, local caches, benchmark result tables
+
+Run the commands above to regenerate outputs locally.
 
 ## Benchmark Topics
 

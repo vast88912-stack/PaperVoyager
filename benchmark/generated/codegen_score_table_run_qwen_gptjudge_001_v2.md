@@ -1,6 +1,0 @@
-| Metric | Algorithm_Dynamic_Programming | Algorithm_Graph_Pathfinding | Algorithm_Sorting_Race | DataStructure_Balanced_Trees | DataStructure_Hash_Map | Distributed_Raft_Consensus | Math_Chaos_Lorenz | Math_Fourier_Transform | Math_Linear_Algebra_Eigen | Math_Monte_Carlo_Estimation | ML_Gradient_Descent | ML_KMeans_Clustering | ML_Neural_Network_Viz | Physics_Fluid_CFD | Physics_Gravity_Orbits | Physics_Optics_Lab | Physics_Thermodynamics | Sys_CPU_Scheduler | Sys_Virtual_Memory | Theory_Cellular_Automata | Overall |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| codegen_final | 8.0% | 12.4% | 42.4% | 28.9% | 29.9% | 27.3% | 24.5% | 69.2% | 27.4% | 44.3% | 79.0% | 29.5% | 73.5% | 0.0% | 62.4% | 32.7% | 55.3% | 53.3% | 54.5% | 30.4% | 39.2% |
-| codegen_base | 70.0% | 54.4% | 66.4% | 68.9% | 69.9% | 67.3% | 64.5% | 69.2% | 67.4% | 68.3% | 89.0% | 69.5% | 73.5% | 40.0% | 62.4% | 72.7% | 71.3% | 69.3% | 70.5% | 30.4% | 65.7% |
-| openai_vlm | 0.0% | 0.0% | 0.0% | 0.0% | 0.0% | 0.0% | 0.0% | 0.0% | 0.0% | 0.0% | 0.0% | 0.0% | 0.0% | 0.0% | 0.0% | 0.0% | 0.0% | 0.0% | 0.0% | 0.0% | 0.0% |
-| gemini_vlm | 0.0% | 0.0% | 0.0% | 0.0% | 0.0% | 0.0% | 0.0% | 0.0% | 0.0% | 0.0% | 0.0% | 0.0% | 0.0% | 0.0% | 0.0% | 0.0% | 0.0% | 0.0% | 0.0% | 0.0% | 0.0% |

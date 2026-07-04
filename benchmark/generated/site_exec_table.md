@@ -1,6 +1,0 @@
-| Evaluator | Algorithm_Dynamic_Programming | Algorithm_Graph_Pathfinding | Algorithm_Sorting_Race | DataStructure_Balanced_Trees | DataStructure_Hash_Map | Distributed_Raft_Consensus | Math_Chaos_Lorenz | Math_Fourier_Transform | Math_Linear_Algebra_Eigen | Math_Monte_Carlo_Estimation | ML_Gradient_Descent | ML_KMeans_Clustering | ML_Neural_Network_Viz | Physics_Fluid_CFD | Physics_Gravity_Orbits | Physics_Optics_Lab | Physics_Thermodynamics | Sys_CPU_Scheduler | Sys_Virtual_Memory | Theory_Cellular_Automata | Overall |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| rule | 25.0% | 25.0% | 25.0% | 25.0% | 25.0% | 25.0% | 25.0% | 25.0% | 25.0% | 25.0% | 25.0% | 25.0% | 25.0% | 25.0% | 25.0% | 25.0% | 25.0% | 25.0% | 25.0% | 25.0% | 25.0% |
-| openai_gpt | NA | NA | NA | NA | NA | NA | NA | NA | NA | NA | NA | NA | NA | NA | NA | NA | NA | NA | NA | NA | 0.0% |
-| openai_gpt4v | NA | NA | NA | NA | NA | NA | NA | NA | NA | NA | NA | NA | NA | NA | NA | NA | NA | NA | NA | NA | 0.0% |
-| gemini_flash | NA | NA | NA | NA | NA | NA | NA | NA | NA | NA | NA | NA | NA | NA | NA | NA | NA | NA | NA | NA | 0.0% |

@@ -29,6 +29,9 @@ build/
 *.log
 *.tmp
 *.bak
+outputs/
+benchmark/generated/
+benchmark/results/
 outputs/**/.build.install.log
 
 # OS/editor
